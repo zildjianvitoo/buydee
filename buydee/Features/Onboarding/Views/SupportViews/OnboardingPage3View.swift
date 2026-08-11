@@ -53,6 +53,7 @@ struct OnboardingPage3View: View {
                     .padding(.vertical, 16)
                     .background(Color.buydee.primaryButton)
                     .clipShape(Capsule())
+                    
             }
             .padding(.bottom, 20)
         }

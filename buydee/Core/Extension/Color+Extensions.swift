@@ -40,6 +40,9 @@ struct BuydeeColors {
     
     /// Accent color for buttons and primary text (dark charcoal grey)
     let primaryButton = Color(hex: "#595959")
+
+    /// Secondary surface used on the lower section of the home screen
+    let secondaryBackground = Color(hex: "#F4F4F4")
     
     /// Text color for dark elements
     let primaryText = Color.primary
