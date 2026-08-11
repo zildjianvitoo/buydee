@@ -16,17 +16,19 @@ struct OnboardingPage4View: View {
                 Color.buydee.cardBackground
                     .frame(height: 300)
                 
-                ZStack(alignment: .top) {
-                    Color.buydee.background
-                    
-                    // Simulated curve
-                    Ellipse()
-                        .fill(Color.buydee.cardBackground)
-                        .frame(width: UIScreen.main.bounds.width * 1.5, height: 200)
-                        .offset(y: -100)
+                GeometryReader { geometry in
+                    ZStack(alignment: .top) {
+                        Color.buydee.background
+                        
+                        // Simulated curve
+                        Ellipse()
+                            .fill(Color.buydee.cardBackground)
+                            .frame(width: geometry.size.width * 1.5, height: 200)
+                            .offset(y: -100)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped() // Mencegah background melebar dan mengacaukan TabView
                 }
-                .frame(maxWidth: .infinity)
-                .clipped() // Mencegah background melebar dan mengacaukan TabView
             }
             .ignoresSafeArea()
             
