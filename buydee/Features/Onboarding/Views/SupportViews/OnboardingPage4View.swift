@@ -18,15 +18,9 @@ struct OnboardingPage4View: View {
                 // Bottom Green Curved Background
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
-                    ZStack(alignment: .top) {
-                        Color.buydee.background
-                        Ellipse()
-                            .fill(Color.buydee.background)
-                            .frame(width: geometry.size.width * 1.5, height: 120)
-                            .offset(y: -60)
-                    }
-                    .frame(height: geometry.size.height * 0.65) // Curve starts roughly 35% from the top
-                    .clipped()
+                    Color.buydee.background
+                        .clipShape(CurveTopShape())
+                        .frame(height: geometry.size.height * 0.62) // Curve starts roughly 38% from the top
                 }
                 .ignoresSafeArea()
                 
@@ -165,5 +159,21 @@ struct RoundedCorner: Shape {
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
         return Path(path.cgPath)
+    }
+}
+
+struct CurveTopShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        // Titik awal di kiri (agak turun)
+        path.move(to: CGPoint(x: 0, y: 50))
+        // Melengkung ke atas di tengah, lalu turun lagi ke kanan
+        path.addQuadCurve(to: CGPoint(x: rect.width, y: 50), control: CGPoint(x: rect.width / 2, y: -20))
+        // Tarik garis ke ujung kanan bawah
+        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
+        // Tarik garis ke ujung kiri bawah
+        path.addLine(to: CGPoint(x: 0, y: rect.height))
+        path.closeSubpath()
+        return path
     }
 }
