@@ -40,6 +40,9 @@ struct BuydeeColors {
     
     /// Accent color for buttons and primary text (dark olive/brown)
     let primaryButton = Color(hex: "#4B5320")
+
+    /// Primary action color used by the camera flow
+    let cameraAction = Color(hex: "#54581A")
     
     /// Text color for dark elements
     let primaryText = Color(hex: "#4B5320")
