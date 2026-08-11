@@ -10,32 +10,29 @@ struct OnboardingPage4View: View {
     var action: () -> Void
     
     var body: some View {
-        ZStack {
-            // Background
-            VStack(spacing: 0) {
-                Color.buydee.cardBackground
-                    .frame(height: 300)
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                // Top white background
+                Color.buydee.cardBackground.ignoresSafeArea()
                 
-                GeometryReader { geometry in
+                // Bottom Green Curved Background
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
                     ZStack(alignment: .top) {
                         Color.buydee.background
-                        
-                        // Simulated curve
                         Ellipse()
-                            .fill(Color.buydee.cardBackground)
-                            .frame(width: geometry.size.width * 1.5, height: 200)
-                            .offset(y: -100)
+                            .fill(Color.buydee.background)
+                            .frame(width: geometry.size.width * 1.5, height: 120)
+                            .offset(y: -60)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped() // Mencegah background melebar dan mengacaukan TabView
+                    .frame(height: geometry.size.height * 0.65) // Curve starts roughly 35% from the top
+                    .clipped()
                 }
-            }
-            .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
+                .ignoresSafeArea()
                 
-                // Header text
-                VStack(alignment: .leading) {
+                // Foreground Content
+                VStack(spacing: 0) {
+                    // Header text
                     Text("Before we go,")
                         .font(.largeTitle) // Dynamic Type
                         .fontWeight(.bold)
@@ -43,57 +40,60 @@ struct OnboardingPage4View: View {
                         .padding(.top, 40)
                         .padding(.horizontal, 32)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                // Otter Placeholder Illustration
-                Image(systemName: "seal.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 120, height: 120)
-                    .foregroundColor(Color.buydee.primaryButton)
-                    .padding(.top, 20)
-                
-                // Question
-                Text("What would you like to\nkeep it in mind before you buy?")
-                    .font(.title3) // Dynamic Type
-                    .fontWeight(.semibold)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(Color.buydee.primaryText)
-                    .padding(.top, 20)
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 24)
-                
-                // Options List
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(OnboardingGoal.allCases) { goal in
-                            GoalSelectionRow(
-                                goal: goal,
-                                isSelected: viewModel.selectedGoal == goal,
-                                customText: $viewModel.customGoalText
-                            ) {
-                                viewModel.selectGoal(goal)
+                    
+                    Spacer()
+                    
+                    // Otter Illustration
+                    Image("otter")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 140)
+                        .padding(.bottom, -15) // Sit exactly on the curve
+                        .zIndex(1)
+                    
+                    // Question
+                    Text("What would you like to\nkeep it in mind before you buy?")
+                        .font(.title3) // Dynamic Type
+                        .fontWeight(.bold)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(Color.buydee.primaryText)
+                        .padding(.top, 30)
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 24)
+                    
+                    // Options List
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(OnboardingGoal.allCases) { goal in
+                                GoalSelectionRow(
+                                    goal: goal,
+                                    isSelected: viewModel.selectedGoal == goal,
+                                    customText: $viewModel.customGoalText
+                                ) {
+                                    viewModel.selectGoal(goal)
+                                }
                             }
                         }
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 20)
                     }
+                    
+                    // Meet me button
+                    Button(action: action) {
+                        Text("Meet me")
+                            .font(.headline) // Dynamic Type
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.buydee.primaryButton)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                     .padding(.horizontal, 32)
+                    .padding(.bottom, 30)
+                    .disabled(viewModel.selectedGoal == nil || (viewModel.selectedGoal == .others && viewModel.customGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+                    .opacity(viewModel.selectedGoal == nil ? 0.5 : 1.0)
                 }
-                
-                Spacer()
-                
-                Button(action: action) {
-                    Text("Meet me")
-                        .font(.headline) // Dynamic Type
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.buydee.primaryButton)
-                        .clipShape(Capsule())
-                }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 20)
-                .disabled(viewModel.selectedGoal == nil || (viewModel.selectedGoal == .others && viewModel.customGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
-                .opacity(viewModel.selectedGoal == nil ? 0.5 : 1.0)
             }
         }
     }
@@ -112,13 +112,13 @@ struct GoalSelectionRow: View {
                 HStack(spacing: 16) {
                     Image(systemName: goal.iconName)
                         .font(.title3)
-                        .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.35)) // Dark navy blue as per design
+                        .foregroundColor(Color.buydee.primaryText)
                         .frame(width: 24)
                     
                     Text(goal.rawValue)
                         .font(.body) // Dynamic Type
                         .fontWeight(.medium)
-                        .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.35))
+                        .foregroundColor(Color.buydee.primaryText)
                     
                     Spacer()
                 }
@@ -127,13 +127,14 @@ struct GoalSelectionRow: View {
                 .background(Color.buydee.cardBackground)
                 .cornerRadius(isSelected && goal == .others ? 16 : 16, corners: isSelected && goal == .others ? [.topLeft, .topRight] : .allCorners)
             }
-            .buttonStyle(.plain) // Wajib agar layout Button tidak hancur di dalam ScrollView
+            .buttonStyle(.plain)
             
             if isSelected && goal == .others {
                 TextField("Something else...", text: $customText)
                     .font(.body) // Dynamic Type
+                    .foregroundColor(Color.buydee.primaryText)
                     .padding(16)
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color.buydee.background.opacity(0.3)) // Subtle background for text field
                     .cornerRadius(8)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)

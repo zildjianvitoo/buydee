@@ -35,14 +35,14 @@ extension Color {
 }
 
 struct BuydeeColors {
-    /// Background color for onboarding (soft periwinkle / blueish grey)
-    let background = Color(hex: "#B8BDE9")
+    /// Background color for onboarding (pistachio green)
+    let background = Color(hex: "#D4DB81")
     
-    /// Accent color for buttons and primary text (dark charcoal grey)
-    let primaryButton = Color(hex: "#595959")
+    /// Accent color for buttons and primary text (dark olive/brown)
+    let primaryButton = Color(hex: "#4B5320")
     
     /// Text color for dark elements
-    let primaryText = Color.primary
+    let primaryText = Color(hex: "#4B5320")
     
     /// Text color for descriptions
     let secondaryText = Color.secondary
