@@ -12,81 +12,85 @@ struct OnboardingPage4View: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
-                // Top white background
+                // 1. Top white background
                 Color.buydee.cardBackground.ignoresSafeArea()
                 
-                // Bottom Green Curved Background
+                // 2. Header text
+                Text("Before we go,")
+                    .font(.largeTitle) // Dynamic Type
+                    .fontWeight(.bold)
+                    .foregroundColor(Color.buydee.primaryText)
+                    .padding(.top, 40)
+                    .padding(.horizontal, 32)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // 3. Otter Illustration (Behind the curve)
+                // Tinggi green background adalah 65% dari layar, jadi batasnya di 35% dari atas.
+                // Kita posisikan otter sedikit di atas batas itu agar kakinya tertutup lengkungan.
+                Image("otter")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 180)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.35 - 30)
+                
+                // 4. Bottom Green Curved Background
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     Color.buydee.background
                         .clipShape(CurveTopShape())
-                        .frame(height: geometry.size.height * 0.62) // Curve starts roughly 38% from the top
+                        .frame(height: geometry.size.height * 0.65)
                 }
                 .ignoresSafeArea()
                 
-                // Foreground Content
+                // 5. Foreground Content (Text, Cards, Button)
                 VStack(spacing: 0) {
-                    // Header text
-                    Text("Before we go,")
-                        .font(.largeTitle) // Dynamic Type
-                        .fontWeight(.bold)
-                        .foregroundColor(Color.buydee.primaryText)
-                        .padding(.top, 40)
-                        .padding(.horizontal, 32)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Spacer(minLength: 0) // Dorong konten ke area hijau (bawah)
                     
-                    Spacer()
-                    
-                    // Otter Illustration
-                    Image("otter")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 140)
-                        .padding(.bottom, -15) // Sit exactly on the curve
-                        .zIndex(1)
-                    
-                    // Question
-                    Text("What would you like to\nkeep it in mind before you buy?")
-                        .font(.title3) // Dynamic Type
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(Color.buydee.primaryText)
-                        .padding(.top, 30)
-                        .padding(.horizontal, 32)
-                        .padding(.bottom, 24)
-                    
-                    // Options List
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(OnboardingGoal.allCases) { goal in
-                                GoalSelectionRow(
-                                    goal: goal,
-                                    isSelected: viewModel.selectedGoal == goal,
-                                    customText: $viewModel.customGoalText
-                                ) {
-                                    viewModel.selectGoal(goal)
+                    VStack(spacing: 0) {
+                        // Question
+                        Text("What would you like to\nkeep it in mind before you buy?")
+                            .font(.title3) // Dynamic Type
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(Color.buydee.primaryText)
+                            .padding(.top, 50) // Jarak dari puncak kurva
+                            .padding(.horizontal, 32)
+                            .padding(.bottom, 24)
+                        
+                        // Options List
+                        ScrollView {
+                            VStack(spacing: 12) {
+                                ForEach(OnboardingGoal.allCases) { goal in
+                                    GoalSelectionRow(
+                                        goal: goal,
+                                        isSelected: viewModel.selectedGoal == goal,
+                                        customText: $viewModel.customGoalText
+                                    ) {
+                                        viewModel.selectGoal(goal)
+                                    }
                                 }
                             }
+                            .padding(.horizontal, 32)
+                            .padding(.bottom, 20)
                         }
+                        
+                        // Meet me button
+                        Button(action: action) {
+                            Text("Meet me")
+                                .font(.headline) // Dynamic Type
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color.buydee.primaryButton)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
                         .padding(.horizontal, 32)
-                        .padding(.bottom, 20)
+                        .padding(.bottom, 30)
+                        .disabled(viewModel.selectedGoal == nil || (viewModel.selectedGoal == .others && viewModel.customGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+                        .opacity(viewModel.selectedGoal == nil ? 0.5 : 1.0)
                     }
-                    
-                    // Meet me button
-                    Button(action: action) {
-                        Text("Meet me")
-                            .font(.headline) // Dynamic Type
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color.buydee.primaryButton)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 30)
-                    .disabled(viewModel.selectedGoal == nil || (viewModel.selectedGoal == .others && viewModel.customGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
-                    .opacity(viewModel.selectedGoal == nil ? 0.5 : 1.0)
+                    .frame(height: geometry.size.height * 0.65) // Match height dengan green background
                 }
             }
         }
@@ -165,10 +169,11 @@ struct RoundedCorner: Shape {
 struct CurveTopShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
+        let curveDepth: CGFloat = 40
         // Titik awal di kiri (agak turun)
-        path.move(to: CGPoint(x: 0, y: 50))
+        path.move(to: CGPoint(x: 0, y: curveDepth))
         // Melengkung ke atas di tengah, lalu turun lagi ke kanan
-        path.addQuadCurve(to: CGPoint(x: rect.width, y: 50), control: CGPoint(x: rect.width / 2, y: -20))
+        path.addQuadCurve(to: CGPoint(x: rect.width, y: curveDepth), control: CGPoint(x: rect.width / 2, y: -curveDepth))
         // Tarik garis ke ujung kanan bawah
         path.addLine(to: CGPoint(x: rect.width, y: rect.height))
         // Tarik garis ke ujung kiri bawah
