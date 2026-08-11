@@ -102,9 +102,9 @@ Scope menunjukkan area kode yang berubah. Gunakan nama **feature folder**:
 | `gemini` | Core/Managers/GeminiService |
 | `ocr` | Core/Managers/OCRService |
 | `entities` | Core/Entities/ |
-| `widget` | HoldyWidget/ |
-| `share-ext` | HoldyShareExtension/ |
-| `shortcuts` | HoldyShortcuts/ |
+| `widget` | BuydeeWidget/ |
+| `share-ext` | BuydeeShareExtension/ |
+| `shortcuts` | BuydeeShortcuts/ |
 | `notif` | Notifications/ |
 
 ### Rules
