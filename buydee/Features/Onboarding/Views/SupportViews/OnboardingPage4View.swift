@@ -4,19 +4,20 @@
 //
 import SwiftUI
 struct OnboardingPage4View: View {
+    // MARK: - Properties
     @Bindable var viewModel: OnboardingViewModel
     var action: () -> Void
     
     @State private var isKeyboardVisible: Bool = false
     
-    var body: some View {
+    // MARK: - Body    var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
                 Color.buydee.cardBackground.ignoresSafeArea()
                 
                 Text("Before we go,")
                     .font(.buydeeLargeTitle)
-                    .foregroundColor(Color.buydee.primaryText)
+                    .foregroundStyle(Color.buydee.primaryText)
                     .padding(.top, 40)
                     .padding(.horizontal, 32)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -43,7 +44,7 @@ struct OnboardingPage4View: View {
                             Text("What would you like to\nkeep it in mind before you buy?")
                                 .font(.buydeeTitle2)
                                 .multilineTextAlignment(.center)
-                                .foregroundColor(Color.buydee.primaryText)
+                                .foregroundStyle(Color.buydee.primaryText)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.top, 30)
                                 .padding(.horizontal, 32)
@@ -75,11 +76,11 @@ struct OnboardingPage4View: View {
                             Button(action: action) {
                                 Text("Meet me")
                                     .font(.buydeeHeadline)
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
                                     .background(isDisabled ? Color.gray.opacity(0.6) : Color.buydee.primaryButton)
-                                    .cornerRadius(BuydeeRadius.small)
+                                    .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, 32)
@@ -99,6 +100,7 @@ struct OnboardingPage4View: View {
 }
 // MARK: - Support View
 struct GoalSelectionRow: View {
+    // MARK: - Properties
     let goal: OnboardingGoal
     let isSelected: Bool
     @Binding var customText: String
@@ -106,17 +108,19 @@ struct GoalSelectionRow: View {
     var action: () -> Void
     
     @FocusState private var isFocused: Bool
+
+    // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
             Button(action: action) {
                 HStack(spacing: 16) {
                     Image(systemName: goal.iconName)
                         .font(.title3)
-                        .foregroundColor(Color.buydee.primaryText)
+                        .foregroundStyle(Color.buydee.primaryText)
                         .frame(width: 24)
                     Text(goal.rawValue)
                         .font(.buydeeBody)
-                        .foregroundColor(Color.buydee.primaryText)
+                        .foregroundStyle(Color.buydee.primaryText)
                     Spacer()
                 }
                 .padding(.vertical, 16)
@@ -132,7 +136,7 @@ struct GoalSelectionRow: View {
                         isKeyboardVisible = newValue
                     }
                     .font(.buydeeBody)
-                    .foregroundColor(Color.buydee.primaryText)
+                    .foregroundStyle(Color.buydee.primaryText)
                     .padding(16)
                     .background(Color.buydee.background.opacity(0.3))
                     .cornerRadius(8)

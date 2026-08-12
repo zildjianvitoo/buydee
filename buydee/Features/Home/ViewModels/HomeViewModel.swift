@@ -8,12 +8,14 @@ import SwiftUI
 
 @Observable
 final class HomeViewModel {
+    // MARK: - Properties
     var savedAmount: Int
     var goalDescription: String?
 
     private let userDefaults: UserDefaults
     private static let goalDescriptionKey = "goalDescription"
 
+    // MARK: - Initialization
     init(
         savedAmount: Int = 0,
         goalDescription: String? = nil,
@@ -25,6 +27,7 @@ final class HomeViewModel {
             ?? userDefaults.string(forKey: Self.goalDescriptionKey)
     }
 
+    // MARK: - Computed Properties
     var formattedSavedAmount: String {
         let amount = savedAmount.formatted(
             .number
@@ -39,6 +42,7 @@ final class HomeViewModel {
         goalDescription ?? "Convert goals will be shown here."
     }
 
+    // MARK: - Methods
     func saveGoal(_ goal: String) {
         let trimmedGoal = goal.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedGoal.isEmpty else { return }

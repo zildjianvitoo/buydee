@@ -6,25 +6,24 @@
 import SwiftUI
 
 struct SavingsSummaryView: View {
+    // MARK: - Properties
     let savedAmount: String
     let goalMessage: String
     let editGoalAction: () -> Void
 
+    // MARK: - Body
     var body: some View {
         VStack(spacing: 8) {
             Text("You Saved")
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(.buydeeHeadline)
                 .foregroundStyle(Color.buydee.secondaryText)
 
             HStack(alignment: .top, spacing: 4) {
                 Text("Rp")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.buydeeTitle2)
                 
                 Text(savedAmount)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .font(.buydeeLargeTitle)
                     .foregroundStyle(Color.buydee.primaryText)
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
@@ -32,14 +31,13 @@ struct SavingsSummaryView: View {
 
             VStack(alignment: .center, spacing: 4) {
                 Text(goalMessage)
-                   .font(.headline)
-                   .fontWeight(.regular)
+                   .font(.buydeeBody)
                    .foregroundStyle(Color.buydee.primaryText)
                    .multilineTextAlignment(.center)
 
                Button("Edit your goals here.", action: editGoalAction)
-                   .font(.subheadline)
-                   .foregroundStyle(Color(hex: "#1E2691"))
+                   .font(.buydeeSubheadline)
+                   .foregroundStyle(Color.buydee.linkText)
                    .accessibilityHint("Opens your savings goal settings")
                    .underline()
             }

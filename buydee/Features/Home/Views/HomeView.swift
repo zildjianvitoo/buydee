@@ -6,12 +6,14 @@
 import SwiftUI
 
 struct HomeView: View {
+    // MARK: - Properties
     @State private var viewModel: HomeViewModel
     @State private var isEditGoalPresented = false
 
     private let editGoalAction: () -> Void
     private let newCheckAction: () -> Void
 
+    // MARK: - Initialization
     init(
         viewModel: HomeViewModel = HomeViewModel(),
         editGoalAction: @escaping () -> Void = {},
@@ -22,6 +24,7 @@ struct HomeView: View {
         self.newCheckAction = newCheckAction
     }
 
+    // MARK: - Body
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -49,8 +52,7 @@ struct HomeView: View {
 
                 VStack(spacing: 20) {
                     Text("Feeling like buying something?")
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                        .font(.buydeeTitle3)
                         .foregroundStyle(Color.buydee.primaryText)
                         .multilineTextAlignment(.center)
 
@@ -71,7 +73,7 @@ struct HomeView: View {
             )
             .background(
                 .ultraThinMaterial,
-                in: RoundedRectangle(cornerRadius: 40, style: .continuous)
+                in: RoundedRectangle(cornerRadius: BuydeeRadius.medium, style: .continuous)
             )
             .padding(.horizontal, 4)
             .padding(.bottom, 16)
@@ -81,6 +83,7 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Private Methods
     private func background(in geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
             Color.buydee.cardBackground

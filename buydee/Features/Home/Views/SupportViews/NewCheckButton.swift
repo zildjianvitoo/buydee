@@ -6,18 +6,19 @@
 import SwiftUI
 
 struct NewCheckButton: View {
+    // MARK: - Properties
     let action: () -> Void
 
+    // MARK: - Body
     var body: some View {
         Button(action: action) {
             Text("Check It Together")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.buydeeTitle3)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(Color.buydee.primaryButton)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
                 .shadow(
                     color: Color.black.opacity(0.22),
                     radius: 8,

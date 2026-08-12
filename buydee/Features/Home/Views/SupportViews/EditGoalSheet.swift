@@ -6,20 +6,24 @@
 import SwiftUI
 
 struct EditGoalSheet: View {
+    // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
     @State private var goalText: String
 
     let saveAction: (String) -> Void
 
+    // MARK: - Initialization
     init(goalText: String, saveAction: @escaping (String) -> Void) {
         _goalText = State(initialValue: goalText)
         self.saveAction = saveAction
     }
 
+    // MARK: - Computed Properties
     private var isGoalEmpty: Bool {
         goalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
@@ -37,21 +41,20 @@ struct EditGoalSheet: View {
                 .padding(.bottom, 28)
 
             Text("What would you like to keep in mind\nbefore you buy?")
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(.buydeeHeadline)
                 .foregroundStyle(Color.buydee.primaryText)
 
             Text("This data will be used to personalize the app.")
-                .font(.subheadline)
+                .font(.buydeeSubheadline)
                 .foregroundStyle(Color.buydee.secondaryText)
                 .padding(.top, 8)
 
             TextField("Enter your goal", text: $goalText)
-                .font(.footnote)
+                .font(.buydeeFootnote)
                 .padding(.horizontal, 17)
                 .padding(.vertical, 16)
                 .background(Color.buydee.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
                 .padding(.top, 30)
                 .submitLabel(.done)
                 .onSubmit(saveGoal)
@@ -62,18 +65,17 @@ struct EditGoalSheet: View {
         .padding(.top, 18)
     }
 
+    // MARK: - Subviews
     private var header: some View {
         HStack {
             Text("Goals")
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.buydeeTitle2)
 
             Spacer()
 
             Button(action: saveGoal) {
                 Image(systemName: "checkmark")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(.buydeeTitle3)
                     .foregroundStyle(Color.buydee.primaryText)
                     .frame(width: 52, height: 52)
                     .background(Color.black.opacity(0.05))
@@ -85,6 +87,7 @@ struct EditGoalSheet: View {
         }
     }
 
+    // MARK: - Methods
     private func saveGoal() {
         guard !isGoalEmpty else { return }
         saveAction(goalText)

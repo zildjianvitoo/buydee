@@ -4,16 +4,19 @@
 //
 import SwiftUI
 struct OnboardingPage3View: View {
+    // MARK: - Properties
     var action: () -> Void
+
+    // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             Text("So, here's how\nwe'll do it.")
                 .font(.buydeeLargeTitle)
-                .foregroundColor(Color.buydee.primaryText)
+                .foregroundStyle(Color.buydee.primaryText)
                 .padding(.top, 40)
             Text("However you find it, bring it here and we'll think it through with what matters to you in mind.")
                 .font(.buydeeBody)
-                .foregroundColor(Color.buydee.primaryText)
+                .foregroundStyle(Color.buydee.primaryText)
                 .padding(.trailing, 20)
             Spacer()
             ZStack {
@@ -35,11 +38,11 @@ struct OnboardingPage3View: View {
             Button(action: action) {
                 Text("Got it")
                     .font(.buydeeHeadline)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(Color.buydee.primaryButton)
-                    .cornerRadius(BuydeeRadius.small)
+                    .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
             }
             .padding(.bottom, 20)
         }
