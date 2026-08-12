@@ -19,8 +19,9 @@ Target chatbot MVP:
 - Summary dengan strict BUY/BYE marker;
 - completion screen BUY dan BYE;
 - runtime-only transcript, cancellation, dan duplicate-send protection.
+- cumulative user knowledge yang ringkas melalui satu record SwiftData.
 
-SwiftData chat history, OCR, Screenshot Shortcut, Share Extension, product-link analysis, widgets, dan reminders bukan scope chatbot MVP. URL-only tidak dikirim ke model.
+SwiftData transcript/chat history, OCR, Screenshot Shortcut, Share Extension, product-link analysis, widgets, dan reminders bukan scope chatbot MVP. URL-only tidak dikirim ke model. SwiftData hanya menyimpan satu context ringkas lintas chat, bukan pesan atau gambar.
 
 ## Arsitektur dan teknologi
 
@@ -33,6 +34,7 @@ SwiftData chat history, OCR, Screenshot Shortcut, Share Extension, product-link 
 - Maksimal 12 transcript messages sebagai history.
 - Non-streaming response, maksimum 2.048 output token, timeout 90 detik.
 - `UserDefaults` untuk onboarding, goals, dan camera guide state.
+- SwiftData untuk satu cumulative user-knowledge record maksimal 600 karakter.
 - Keychain untuk OpenRouter credential.
 - AVFoundation/PhotosUI dari Camera feature existing.
 - Image pipeline chatbot: longest side 2048 px, JPEG quality 0.82, lalu data URL base64.
@@ -109,6 +111,7 @@ Pada run pertama, aplikasi membaca environment key dan menyimpannya ke Keychain.
 
 - Jangan menaruh key di Swift source, `Info.plist`, `.xcconfig` yang di-commit, asset, fixture, README value, atau log.
 - Jangan commit user scheme/Xcode user data yang mengandung secret.
+- Jangan log transcript, image data, atau `UserChatKnowledge`.
 - Gunakan API key development pribadi dan rotasi key jika pernah terekspos.
 - Keychain melindungi local storage, tetapi bukan pengganti backend protection untuk aplikasi production.
 - Production harus menggunakan backend proxy/rate limiting sebelum distribusi luas.
@@ -117,10 +120,12 @@ Pada run pertama, aplikasi membaca environment key dan menyimpannya ke Keychain.
 
 - Developer prompt penuh menentukan fase; aplikasi tidak menyimpan enum fase.
 - Nama produk dan harga harus diketahui sebelum eksplorasi DARN.
+- Harga berbentuk rentang harus dikonfirmasi dulu: AI menawarkan nilai tengah, menunggu persetujuan user, dan Summary berbasis midpoint wajib membawa marker `<!-- BUYDEE_MIDPOINT_CONFIRMED -->`.
 - Summary wajib mengandung `**PROS:**`, `**CONS:**`, `**BUY**`, dan `**BYE**` sebelum tombol decision tampil.
 - Tap decision mengirim `BUY — Beli sekarang` atau `BYE — Tidak beli sekarang` sebagai user message.
 - Satu request AI saja boleh aktif; back/new chat membatalkan request dan late response diabaikan.
-- Transcript hanya runtime; `userGoals` persisten di `UserDefaults`.
+- Transcript hanya runtime; `userGoals` persisten di `UserDefaults`, sedangkan context penting lintas chat disimpan sebagai satu record SwiftData.
+- Marker knowledge internal dihapus sebelum bubble dirender dan tidak membutuhkan request AI kedua.
 - Image menggunakan model vision yang sama setelah resize 2048/JPEG 0.82; tidak ada OCR atau image-analysis service kedua.
 - URL HTTP/HTTPS tanpa gambar ditolak sebelum send.
 

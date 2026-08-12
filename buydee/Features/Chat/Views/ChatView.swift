@@ -57,16 +57,6 @@ struct ChatView: View {
                 Button("Back", systemImage: "chevron.left", action: closeChat)
                     .accessibilityHint("Cancels the active response and returns home")
             }
-
-            if viewModel.isGenerating {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(
-                        "Stop",
-                        systemImage: "stop.circle",
-                        action: viewModel.cancelActiveRequest
-                    )
-                }
-            }
         }
     }
 

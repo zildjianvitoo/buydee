@@ -1,11 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var path: [Route] = []
     @State private var chatViewModel = ChatViewModel()
     @State private var showsCamera = false
     @State private var sendsCaptureToChat = false
-    @State private var latestConsideredPriceInRupiah = 0
+    @State private var latestConsideredPriceInRupiah: RupiahAmount?
 
     private enum Route: Hashable {
         case chat
@@ -39,6 +41,11 @@ struct ContentView: View {
                 onImageCaptured: handleCapturedImage
             )
         }
+        .task {
+            chatViewModel.configureUserKnowledgeStore(
+                SwiftDataUserKnowledgeStore(modelContext: modelContext)
+            )
+        }
     }
 
     private func openHomeCamera() {
@@ -69,7 +76,7 @@ struct ContentView: View {
     }
 
     private func showCompletion(_ decision: PurchaseDecision) {
-        latestConsideredPriceInRupiah = chatViewModel.latestConsideredPriceInRupiah ?? 0
+        latestConsideredPriceInRupiah = chatViewModel.latestConsideredPriceInRupiah
         path.append(.completion(decision))
     }
 
@@ -81,4 +88,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .modelContainer(for: UserChatKnowledge.self, inMemory: true)
 }

@@ -12,8 +12,9 @@ struct ChatSummaryCard: View {
                     .font(.buydeeChatSummaryTitle)
 
                 if !summary.context.isEmpty {
-                    Text(summary.context)
+                    Text(ChatInlineMarkdownParser.parse(summary.context))
                         .font(.buydeeChatMessage)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 SummaryListSection(
@@ -39,6 +40,7 @@ struct ChatSummaryCard: View {
             .frame(maxWidth: 460, alignment: .leading)
             .background(Color.buydee.deepOliveGreen)
             .clipShape(.rect(cornerRadius: 20))
+            .textSelection(.enabled)
 
             Spacer(minLength: 24)
         }
@@ -66,10 +68,10 @@ struct ChatSummaryCard: View {
         markdown: """
         Sebentar aku rangkum dulu ya—biar kamu bisa melihat seluruh gambarannya sebelum memilih.
 
-        Kamu sedang mempertimbangkan sepatu lari seharga Rp1.500.000.
+        Kamu sedang mempertimbangkan **sepatu lari seharga Rp1.500.000**.
 
         **PROS:**
-        - Model dan warnanya sesuai dengan yang kamu cari.
+        - Model dan **warnanya** sesuai dengan yang kamu cari.
         - Terlihat nyaman untuk dipakai berlari.
         **CONS:**
         - Kamu sudah memiliki dua pasang sepatu serupa.

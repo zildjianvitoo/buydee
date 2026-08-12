@@ -24,7 +24,7 @@ struct ChatMessageBubble: View {
                         .frame(width: displaySize.width, height: displaySize.height)
                         .clipped()
                         .clipShape(.rect(cornerRadius: 14))
-                        .padding(16)
+                        .padding(8)
                         .background(bubbleColor)
                         .clipShape(.rect(cornerRadius: 20))
                         .overlay(alignment: message.role == .assistant ? .bottomLeading : .bottomTrailing) {

@@ -18,14 +18,20 @@ struct OpenRouterChatService: ChatServicing {
     func response(
         to latestMessage: ChatMessage,
         history: [ChatMessage],
-        goals: String
-    ) async throws -> String {
+        goals: String,
+        userKnowledge: String
+    ) async throws -> ChatServiceResponse {
         try Task.checkCancellation()
 
         var requestMessages = [
             Request.Message(
                 role: .developer,
-                content: .text(DeveloperPrompt.render(goals: goals))
+                content: .text(
+                    DeveloperPrompt.render(
+                        goals: goals,
+                        userKnowledge: userKnowledge
+                    )
+                )
             )
         ]
         requestMessages += history
@@ -71,7 +77,11 @@ struct OpenRouterChatService: ChatServicing {
             guard let answer = decodedResponse.firstNonemptyText else {
                 throw ChatServiceError.emptyResponse
             }
-            return answer
+            let parsedResponse = ChatServiceResponse(rawContent: answer)
+            guard !parsedResponse.content.isEmpty else {
+                throw ChatServiceError.emptyResponse
+            }
+            return parsedResponse
         } catch is CancellationError {
             throw CancellationError()
         } catch let error as URLError where error.code == .cancelled {

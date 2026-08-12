@@ -1,7 +1,12 @@
 import Foundation
 
 enum RupiahCurrency {
-    static func firstAmount(in text: String) -> Int? {
+    static func firstAmount(in text: String) -> RupiahAmount? {
+        if let rangeAmount = firstRangeMidpoint(in: text) {
+            return rangeAmount
+        }
+        guard !containsOpenEndedRange(in: text) else { return nil }
+
         let pattern = #"(?i)\bRp\s*([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)?"#
         guard let expression = try? NSRegularExpression(pattern: pattern),
               let match = expression.firstMatch(
@@ -13,13 +18,69 @@ enum RupiahCurrency {
         }
 
         let numberText = String(text[numberRange])
-        let unit: String
-        if let unitRange = Range(match.range(at: 2), in: text) {
-            unit = String(text[unitRange]).lowercased()
-        } else {
-            unit = ""
+        let unit = capturedString(at: 2, from: match, in: text).lowercased()
+        guard let amount = parsedAmount(numberText, unit: unit) else { return nil }
+        return RupiahAmount(value: amount, isEstimated: false)
+    }
+
+    static func formatted(_ amount: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "id_ID")
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        let number = formatter.string(from: NSNumber(value: max(0, amount))) ?? String(max(0, amount))
+        return "Rp \(number)"
+    }
+
+    private static func firstRangeMidpoint(in text: String) -> RupiahAmount? {
+        let pattern = #"(?i)\bRp\s*([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)?\s*(?:-|–|—|sampai|hingga|to)\s*(?:Rp\s*)?([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)?"#
+        guard let expression = try? NSRegularExpression(pattern: pattern),
+              let match = expression.firstMatch(
+                in: text,
+                range: NSRange(text.startIndex..., in: text)
+              ) else {
+            return nil
         }
 
+        let firstNumber = capturedString(at: 1, from: match, in: text)
+        let secondNumber = capturedString(at: 3, from: match, in: text)
+        let firstExplicitUnit = capturedString(at: 2, from: match, in: text).lowercased()
+        let secondExplicitUnit = capturedString(at: 4, from: match, in: text).lowercased()
+        let firstUnit = firstExplicitUnit.isEmpty ? secondExplicitUnit : firstExplicitUnit
+        let secondUnit = secondExplicitUnit.isEmpty ? firstExplicitUnit : secondExplicitUnit
+
+        guard let firstAmount = parsedAmount(firstNumber, unit: firstUnit),
+              let secondAmount = parsedAmount(secondNumber, unit: secondUnit) else {
+            return nil
+        }
+
+        let lowerBound = min(firstAmount, secondAmount)
+        let upperBound = max(firstAmount, secondAmount)
+        let midpoint = lowerBound + ((upperBound - lowerBound) / 2)
+        return RupiahAmount(value: midpoint, isEstimated: true)
+    }
+
+    private static func containsOpenEndedRange(in text: String) -> Bool {
+        let pattern = #"(?i)(?:(?:mulai(?:\s+dari)?|minimal|setidaknya)\s*Rp\s*[0-9]|Rp\s*[0-9]+(?:[.,][0-9]+)*\s*(?:juta|jt|ribu|rb|k)?\s*(?:\+|ke atas))"#
+        guard let expression = try? NSRegularExpression(pattern: pattern) else {
+            return false
+        }
+        return expression.firstMatch(
+            in: text,
+            range: NSRange(text.startIndex..., in: text)
+        ) != nil
+    }
+
+    private static func capturedString(
+        at index: Int,
+        from match: NSTextCheckingResult,
+        in text: String
+    ) -> String {
+        guard let range = Range(match.range(at: index), in: text) else { return "" }
+        return String(text[range])
+    }
+
+    private static func parsedAmount(_ numberText: String, unit: String) -> Int? {
         let amount: Double
         if unit.isEmpty {
             let digits = numberText.filter(\.isNumber)
@@ -34,15 +95,6 @@ enum RupiahCurrency {
 
         guard amount > 0, amount <= Double(Int.max) else { return nil }
         return Int(amount.rounded())
-    }
-
-    static func formatted(_ amount: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "id_ID")
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        let number = formatter.string(from: NSNumber(value: max(0, amount))) ?? String(max(0, amount))
-        return "Rp \(number)"
     }
 
     private static func normalizedDecimal(_ value: String) -> String {

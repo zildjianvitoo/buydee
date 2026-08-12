@@ -2,12 +2,12 @@ import SwiftUI
 
 struct DecisionCompletionView: View {
     let decision: PurchaseDecision
-    let consideredPriceInRupiah: Int
+    let consideredPriceInRupiah: RupiahAmount?
     let onDone: () -> Void
 
     var body: some View {
         GeometryReader { proxy in
-            let panelHeight = proxy.size.height * 0.58
+            let panelHeight = proxy.size.height * 0.53
             let panelTop = proxy.size.height - panelHeight
 
             ZStack(alignment: .top) {
@@ -39,25 +39,34 @@ struct DecisionCompletionView: View {
     }
 
     private var byeHeadline: String {
-        guard consideredPriceInRupiah > 0 else {
+        guard let consideredPriceInRupiah else {
             return "Yeay! You saved money from this decision!"
         }
-        return "Yeay! You saved \(RupiahCurrency.formatted(consideredPriceInRupiah)) from this decision!"
+        let estimatePrefix = consideredPriceInRupiah.isEstimated ? "around " : ""
+        return "Yeay! You saved \(estimatePrefix)\(RupiahCurrency.formatted(consideredPriceInRupiah.value)) from this decision!"
     }
 }
 
-#Preview("BYE Completion") {
+#Preview("Screen 1 — BYE Completion") {
     DecisionCompletionView(
         decision: .bye,
-        consideredPriceInRupiah: 750_000,
+        consideredPriceInRupiah: RupiahAmount(value: 750_000, isEstimated: false),
         onDone: {}
     )
 }
 
-#Preview("BUY Completion") {
+#Preview("Screen 2 — BUY Completion") {
     DecisionCompletionView(
         decision: .buy,
-        consideredPriceInRupiah: 750_000,
+        consideredPriceInRupiah: RupiahAmount(value: 16_000_000, isEstimated: true),
+        onDone: {}
+    )
+}
+
+#Preview("State — BYE with Confirmed Price Range") {
+    DecisionCompletionView(
+        decision: .bye,
+        consideredPriceInRupiah: RupiahAmount(value: 16_000_000, isEstimated: true),
         onDone: {}
     )
 }

@@ -13,6 +13,8 @@ final class ChatViewModel {
     @ObservationIgnored private let service: any ChatServicing
     @ObservationIgnored private let imageProcessor: ImageAttachmentProcessor
     @ObservationIgnored private let userDefaults: UserDefaults
+    @ObservationIgnored private var userKnowledgeStore: (any UserKnowledgeStoring)?
+    @ObservationIgnored private var userKnowledge = ""
     @ObservationIgnored private var responseTask: Task<Void, Never>?
     @ObservationIgnored private var imageProcessingTask: Task<Void, Never>?
     @ObservationIgnored private var activeRequestID: UUID?
@@ -32,6 +34,16 @@ final class ChatViewModel {
 
     convenience init() {
         self.init(service: OpenRouterChatService())
+    }
+
+    func configureUserKnowledgeStore(_ store: any UserKnowledgeStoring) {
+        userKnowledgeStore = store
+
+        do {
+            userKnowledge = try store.currentKnowledge()
+        } catch {
+            errorMessage = Self.knowledgeLoadErrorMessage
+        }
     }
 
     var canSend: Bool {
@@ -54,10 +66,10 @@ final class ChatViewModel {
             && !isGenerating
     }
 
-    var latestConsideredPriceInRupiah: Int? {
+    var latestConsideredPriceInRupiah: RupiahAmount? {
         messages.reversed().lazy
             .compactMap(\.decisionSummary)
-            .compactMap { RupiahCurrency.firstAmount(in: $0.context) }
+            .compactMap(\.consideredPriceInRupiah)
             .first
     }
 
@@ -218,15 +230,19 @@ final class ChatViewModel {
             defer { self.finishResponse(id: requestID) }
 
             do {
-                let answer = try await self.service.response(
+                let response = try await self.service.response(
                     to: latestMessage,
                     history: history,
-                    goals: goals
+                    goals: goals,
+                    userKnowledge: self.userKnowledge
                 )
                 try Task.checkCancellation()
                 guard self.activeRequestID == requestID else { return }
 
-                self.messages.append(ChatMessage(role: .assistant, content: answer))
+                self.messages.append(
+                    ChatMessage(role: .assistant, content: response.content)
+                )
+                self.persistUserKnowledge(response.updatedUserKnowledge)
                 self.lastRequestedMessage = nil
                 self.lastRequestHistory = []
             } catch is CancellationError {
@@ -245,9 +261,26 @@ final class ChatViewModel {
         isGenerating = false
     }
 
+    private func persistUserKnowledge(_ updatedKnowledge: String?) {
+        guard let updatedKnowledge else { return }
+
+        do {
+            try userKnowledgeStore?.replaceKnowledge(with: updatedKnowledge)
+            userKnowledge = updatedKnowledge
+        } catch {
+            errorMessage = Self.knowledgeSaveErrorMessage
+        }
+    }
+
     private static let unsupportedLinkMessage =
         "Link produk belum bisa dianalisis. Kirim nama produk dan harganya, atau lampirkan gambar produk."
 
+    private static let knowledgeLoadErrorMessage =
+        "Konteks dari chat sebelumnya belum berhasil dimuat. Chat ini tetap bisa dilanjutkan."
+
+    private static let knowledgeSaveErrorMessage =
+        "Respons sudah diterima, tetapi konteks pentingnya belum berhasil disimpan."
+
     private static let earlySummaryRequest =
-        "Aku siap menentukan pilihan sekarang. Tolong rangkum percakapan ini sesuai format Summary dan tawarkan BUY atau BYE secara netral."
+        "Aku siap menentukan pilihan sekarang. Jika harga berupa rentang dan nilai tengahnya belum aku konfirmasi, tanyakan konfirmasinya dulu dan jangan buat Summary. Jika harga sudah valid, rangkum percakapan ini sesuai format Summary dan tawarkan BUY atau BYE secara netral."
 }

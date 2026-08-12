@@ -6,24 +6,23 @@ struct DecisionCompletionPanel: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let circleDiameter = proxy.size.width * 1.5
+            let circleDiameter = proxy.size.width * 2
             let circleRadius = circleDiameter / 2
             let halfScreenWidth = proxy.size.width / 2
             let arcDepth = circleRadius - sqrt(
                 max(0, (circleRadius * circleRadius) - (halfScreenWidth * halfScreenWidth))
             )
-            let topContentPadding = arcDepth + 48
-            let bottomContentPadding = max(proxy.safeAreaInsets.bottom, 24) + 16
+            let contentWidth = min(max(0, proxy.size.width - 64), 560)
+            let topContentPadding = arcDepth + 24
+            let bottomContentPadding = max(proxy.safeAreaInsets.bottom, 24) + 88
 
             ZStack(alignment: .top) {
-                Circle()
-                    .fill(panelBackground)
-                    .frame(width: circleDiameter, height: circleDiameter)
-                    .offset(x: (proxy.size.width - circleDiameter) / 2)
-
                 panelBackground
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, arcDepth)
+                    .frame(
+                        width: proxy.size.width,
+                        height: max(0, proxy.size.height - arcDepth)
+                    )
+                    .offset(y: arcDepth)
 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -56,19 +55,25 @@ struct DecisionCompletionPanel: View {
                         .accessibilityHint("Continues to the saved decision screen")
                     }
                     .foregroundStyle(panelForeground)
+                    .frame(width: contentWidth)
                     .frame(
-                        maxWidth: 560,
                         minHeight: max(
                             0,
                             proxy.size.height - topContentPadding - bottomContentPadding
                         )
                     )
-                    .padding(.horizontal, 32)
                     .padding(.top, topContentPadding)
                     .padding(.bottom, bottomContentPadding)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: proxy.size.width, alignment: .center)
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
                 .scrollIndicators(.hidden)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .background(alignment: .top) {
+                Circle()
+                    .fill(panelBackground)
+                    .frame(width: circleDiameter, height: circleDiameter)
             }
             .clipped()
         }
@@ -102,4 +107,16 @@ struct DecisionCompletionPanel: View {
     private var buttonForeground: Color {
         decision == .buy ? Color.buydee.primaryText : Color.buydee.cardBackground
     }
+}
+
+#Preview("BYE Completion Panel") {
+    DecisionCompletionPanel(decision: .bye, onDone: {})
+        .frame(width: 393, height: 500)
+        .background(Color.buydee.chatBackground)
+}
+
+#Preview("BUY Completion Panel") {
+    DecisionCompletionPanel(decision: .buy, onDone: {})
+        .frame(width: 393, height: 500)
+        .background(Color.buydee.chatBackground)
 }

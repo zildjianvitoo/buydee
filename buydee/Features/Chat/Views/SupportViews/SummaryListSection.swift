@@ -11,9 +11,14 @@ struct SummaryListSection: View {
                 .font(.buydeeChatSummaryTitle)
 
             ForEach(items, id: \.self) { item in
-                Text("• \(item)")
-                    .font(.buydeeChatMessage)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("•")
+                        .accessibilityHidden(true)
+
+                    Text(ChatInlineMarkdownParser.parse(item))
+                        .font(.buydeeChatMessage)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .foregroundStyle(Color.white)

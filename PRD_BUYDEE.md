@@ -47,6 +47,7 @@ Chatbot menggunakan camera-first entry. Home membuka Camera/Photos flow existing
 - Completion screen berbeda untuk hasil BUY dan BYE.
 - Single-flight request, cancellation, error state, dan pencegahan duplicate send.
 - Transcript hanya hidup selama runtime chat; goals tetap persisten di `UserDefaults`.
+- Satu knowledge ringkas lintas chat disimpan dan terus diperbarui melalui SwiftData.
 - API key dibaca dari environment developer dan disimpan ke Keychain.
 
 ### Tidak termasuk MVP
@@ -94,11 +95,13 @@ BuydeeApp
     ├── Models
     │   ├── ChatMessage / ChatRole
     │   ├── DraftImageAttachment
-    │   └── PurchaseDecision
+    │   ├── PurchaseDecision
+    │   └── UserChatKnowledge (SwiftData single record)
     ├── Services
     │   ├── ChatServicing / OpenRouter service
     │   ├── AIConfiguration
-    │   └── ImageAttachmentProcessor
+    │   ├── ImageAttachmentProcessor
+    │   └── SwiftDataUserKnowledgeStore
     └── Prompts
         └── DeveloperPrompt
 
@@ -114,7 +117,7 @@ Dependency flow:
 ```text
 Home Check It Together → Camera/Photos preview → Use Photo → ChatView + image draft
 Chat View → Chat ViewModel → ChatServicing → OpenRouter REST
-                         ├→ DeveloperPrompt + UserDefaults goals
+                         ├→ DeveloperPrompt + UserDefaults goals + SwiftData knowledge
                          ├→ CredentialStore → Keychain
                          └→ ImageAttachmentProcessor
 
@@ -206,16 +209,19 @@ Runtime state
 - navigation destination
 ```
 
-Transcript dan attachment tidak disimpan ke `UserDefaults`, SwiftData, file, atau Keychain pada MVP. New chat/finish menghapus transcript dan draft setelah membatalkan request aktif.
+Transcript dan attachment tidak disimpan ke `UserDefaults`, SwiftData, file, atau Keychain. New chat/finish menghapus transcript dan draft setelah membatalkan request aktif. Yang dipersistenkan hanya satu `UserChatKnowledge`: context plain-text maksimal 600 karakter berisi fakta stabil yang dinyatakan user dan berguna lintas sesi, bukan salinan transcript.
 
 | Data | Storage | Contract |
 |---|---|---|
 | `hasCompletedOnboarding` | `@AppStorage` / `UserDefaults` | App entry routing. |
 | `userGoals` | `UserDefaults` | Context ringan untuk developer prompt. |
 | `hasSeenCameraGuide` | `UserDefaults` | Existing camera guide state. |
+| `UserChatKnowledge` | SwiftData | Satu record cumulative; diperbarui dari marker internal pada response dan digunakan sebagai knowledge tambahan chat berikutnya. |
 | OpenRouter API key | Keychain | Credential saja; tidak boleh dicatat ke log. |
 
-Goals di-trim lalu karakter XML (`&`, `<`, `>`, quote) di-escape sebelum dimasukkan ke `<user_context>`. Goals adalah data tidak tepercaya. Jika kosong, render `Belum diisi`; developer prompt melarang model menyebut field tersebut.
+Goals dan knowledge di-trim lalu karakter XML (`&`, `<`, `>`, quote) di-escape sebelum dimasukkan ke `<user_context>`. Keduanya adalah data tidak tepercaya. Jika kosong, render placeholder internal; developer prompt melarang model menyebut placeholder tersebut.
+
+Setiap response model wajib berakhir dengan satu marker `<!-- BUYDEE_USER_KNOWLEDGE: ... -->`. Marker membawa versi lengkap knowledge terbaru hasil merge dengan context lama, diparse dan dibatasi maksimal 600 karakter, lalu dihapus sebelum response menjadi `ChatMessage`. Marker kosong berarti knowledge dikosongkan; response tanpa marker tidak mengubah record. Mekanisme ini memakai request chat yang sama—tidak membuat request AI tambahan. Store mempertahankan satu record dan menghapus duplicate record bila ditemukan.
 
 ## 7. Konfigurasi OpenRouter
 
@@ -270,6 +276,7 @@ Aplikasi tidak menyimpan phase enum. Developer prompt menginstruksikan model men
 
 - Nama/jenis produk dan harga wajib diketahui sebelum eksplorasi.
 - Jika salah satu belum jelas, tanyakan tepat satu klarifikasi tanpa pertanyaan DARN pada response yang sama.
+- Jika harga berupa rentang tertutup, tawarkan nilai tengahnya sebagai estimasi dan tunggu konfirmasi eksplisit user pada giliran terpisah. Jika user menolak, minta satu nominal atau batas rentang yang ingin dipakai. Jangan lanjut ke eksplorasi atau Summary sebelum harga ini disepakati.
 - Jangan menguatkan promo dengan framing nominal “hemat Rp…”.
 
 ### Phase B — Explore
@@ -282,7 +289,7 @@ Kecukupan dinilai dari keseluruhan history. Satu jawaban boleh memenuhi beberapa
 
 ### Phase D — Summary & Choice
 
-Summary memuat produk, harga, situasi singkat, PROS, CONS, dan pertanyaan netral BUY/BYE. PROS/CONS hanya berasal dari pengguna. Maksimal satu perbandingan goal–harga boleh digunakan jika benar-benar relevan dan hanya memakai nominal yang tersedia.
+Summary memuat produk, harga, situasi singkat, PROS, CONS, dan pertanyaan netral BUY/BYE. PROS/CONS hanya berasal dari pengguna. Maksimal satu perbandingan goal–harga boleh digunakan jika benar-benar relevan dan hanya memakai nominal yang tersedia. Nilai tengah rentang hanya boleh dipakai setelah konfirmasi pada Phase A.
 
 ### Phase E — Close
 
@@ -305,6 +312,12 @@ Sebentar aku rangkum dulu ya—biar kamu bisa melihat seluruh gambarannya sebelu
 Dari semua yang kita bahas—kamu mau pilih **BUY** (beli sekarang) atau **BYE** (tidak beli sekarang)?
 ```
 
+Jika Summary memakai nilai tengah rentang yang sudah dikonfirmasi user, output juga wajib memiliki marker internal berikut pada baris tersendiri. Marker tidak digunakan untuk harga tunggal atau nominal yang dipilih langsung oleh user.
+
+```html
+<!-- BUYDEE_MIDPOINT_CONFIRMED -->
+```
+
 Decision buttons hanya tampil ketika assistant response terakhir memiliki semua marker berikut, case-insensitive:
 
 - `**PROS:**`
@@ -312,7 +325,7 @@ Decision buttons hanya tampil ketika assistant response terakhir memiliki semua 
 - `**BUY**`
 - `**BYE**`
 
-Bold marker dan colon pada PROS/CONS wajib. Selain marker, `DecisionSummary` harus berhasil mem-parsing sedikitnya satu item PROS dan satu item CONS. Button tidak tampil saat generating. UI tidak boleh menebak Summary hanya dari bubble count, DARN phase, atau isi yang mirip.
+Bold marker dan colon pada PROS/CONS wajib. Selain marker, `DecisionSummary` harus berhasil mem-parsing sedikitnya satu item PROS dan satu item CONS. Jika parser menemukan rentang harga, Summary ditolak kecuali marker midpoint terkonfirmasi juga ada; marker tersebut dibuang dari content yang dirender. Button tidak tampil saat generating. UI tidak boleh menebak Summary hanya dari bubble count, DARN phase, atau isi yang mirip.
 
 Tap button mengirim salah satu message berikut sebagai role `user` melalui pipeline normal:
 
