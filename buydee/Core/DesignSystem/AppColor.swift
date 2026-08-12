@@ -5,7 +5,7 @@
 import SwiftUI
 extension Color {
     static let buydee = BuydeeColors()
-    /// Initializes a Color from a hex string (e.g., "#B8BDE9" or "B8BDE9")
+
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
@@ -31,14 +31,12 @@ extension Color {
     }
 }
 struct BuydeeColors {
-    /// Background color for onboarding (pistachio green)
+
     let background = Color(hex: "#D4DB81")
-    /// Accent color for buttons (dark olive)
+
     let primaryButton = Color(hex: "#54581A")
-    /// Text color for dark elements (dark brown)
     let primaryText = Color(hex: "#523602")
-    /// Text color for descriptions
     let secondaryText = Color.secondary
-    /// Card background color
+
     let cardBackground = Color.white
 }
