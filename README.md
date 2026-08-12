@@ -34,6 +34,7 @@ SwiftData transcript/chat history, OCR, Screenshot Shortcut, Share Extension, pr
 - Developer prompt dikirim dengan role `developer`.
 - Maksimal 12 transcript messages sebagai history.
 - Non-streaming response, maksimum 2.048 output token, timeout 90 detik.
+- Reasoning memakai effort `medium`; model tetap melakukan reasoning tetapi detailnya tidak dikembalikan (`exclude: true`).
 - `UserDefaults` untuk onboarding, goals, dan camera guide state.
 - SwiftData untuk satu cumulative user-knowledge record maksimal 600 karakter dan maksimum 30 record keputusan selesai.
 - Keychain untuk OpenRouter credential.

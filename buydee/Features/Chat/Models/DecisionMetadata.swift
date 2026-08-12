@@ -1,6 +1,6 @@
 import Foundation
 
-struct DecisionMetadata: Codable, Equatable, Sendable {
+nonisolated struct DecisionMetadata: Codable, Equatable, Sendable {
     let productName: String?
     let productCategory: String?
     let originalPriceText: String?
@@ -64,7 +64,10 @@ struct DecisionMetadata: Codable, Equatable, Sendable {
         case relatedGoal = "related_goal"
     }
 
-    private static func normalized(_ value: String?, maximumLength: Int) -> String? {
+    private static func normalized(
+        _ value: String?,
+        maximumLength: Int
+    ) -> String? {
         guard let value else { return nil }
         let normalizedValue = value
             .split(whereSeparator: \Character.isWhitespace)

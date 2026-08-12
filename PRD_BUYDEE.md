@@ -241,6 +241,7 @@ Store mempertahankan maksimum 30 record terbaru. Hanya maksimum 12 record terbar
 | Instruction role | `developer` |
 | History window | Maksimal 12 transcript messages |
 | Maximum output | 2.048 tokens |
+| Reasoning | `effort: medium`, `exclude: true` |
 | Timeout | 90 seconds |
 | Streaming | Disabled |
 | Temperature/top-p | Provider/model default |

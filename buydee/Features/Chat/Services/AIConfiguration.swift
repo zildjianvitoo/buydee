@@ -5,6 +5,8 @@ struct AIConfiguration: Sendable {
     let model: String
     let maximumHistoryCount: Int
     let maximumOutputTokens: Int
+    let reasoningEffort: ReasoningEffort
+    let excludesReasoningFromResponse: Bool
     let timeout: TimeInterval
 
     static let `default` = AIConfiguration(
@@ -12,6 +14,8 @@ struct AIConfiguration: Sendable {
         model: "openai/gpt-5.6-luna",
         maximumHistoryCount: 12,
         maximumOutputTokens: 2_048,
+        reasoningEffort: .medium,
+        excludesReasoningFromResponse: true,
         timeout: 90
     )
 
