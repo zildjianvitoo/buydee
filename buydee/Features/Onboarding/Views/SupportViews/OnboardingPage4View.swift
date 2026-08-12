@@ -16,19 +16,31 @@ struct OnboardingPage4View: View {
             ZStack(alignment: .top) {
                 Color.buydee.canvasBackground.ignoresSafeArea()
                 
-                Text("Before we go,")
-                    .font(.buydeeLargeTitle)
-                    .foregroundStyle(Color.buydee.primaryText)
-                    .padding(.top, 36)
-                    .padding(.horizontal, 32)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 
-                Image("otter")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 250)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.25 + 50)
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("What are you saving from?")
+                        .font(.buydeeLargeTitle)
+                        .foregroundStyle(Color.buydee.primaryText)
+                        
+                        
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("We’ll remind you what matters whenever you're tempted to buy.")
+                        .font(.buydeeBody)
+                        .foregroundStyle(Color.buydee.primaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 32)
+                .padding(.top, 36)
+                .padding(.bottom, 30)
+                
+                
+//                Image("otter")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(height: 250)
+//                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.25 + 50)
                 
                 
                 VStack(spacing: 0) {
@@ -36,15 +48,7 @@ struct OnboardingPage4View: View {
                     
                     ZStack(alignment: .top) {
                         VStack(spacing: 0) {
-                            Text("What would you like to\nkeep it in mind before you buy?")
-                                .font(.buydeeTitle2)
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(Color.buydee.primaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.top, 30)
-                                .padding(.horizontal, 32)
-                                .padding(.bottom, 16)
-                            
+                           
                             ScrollView {
                                 VStack(spacing: 12) {
                                     ForEach(OnboardingGoal.allCases) { goal in
@@ -62,7 +66,7 @@ struct OnboardingPage4View: View {
                                 }
                                 .padding(.horizontal, 32)
                                 .padding(.bottom, 20)
-                                .padding(.top,8)
+                                .padding(.top,72)
                             }
                             .scrollDisabled(true)
                             .scrollIndicators(.hidden)
@@ -118,7 +122,7 @@ struct GoalSelectionRow: View {
                 HStack(spacing: 16) {
                     Image(systemName: goal.iconName)
                         .font(.title3)
-                        .foregroundStyle(Color.buydee.primaryIcon)
+                        .foregroundStyle(Color.buydee.primaryText)
                         .frame(width: 24)
                     Text(goal.rawValue)
                         .font(.buydeeHeadline)
