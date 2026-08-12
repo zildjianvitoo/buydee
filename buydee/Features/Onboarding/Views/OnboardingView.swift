@@ -7,19 +7,17 @@ struct OnboardingView: View {
     @State private var viewModel = OnboardingViewModel()
     var body: some View {
         TabView(selection: $viewModel.currentPage) {
-            VStack {
-                Text("Page 1 (Placeholder)")
-                    .font(.title)
-                Button("Next") { viewModel.nextPage() }
-                    .padding()
-            }
+            
+            // Placeholder for Page 1
+            OnboardingPage1View(action: {
+                viewModel.nextPage()
+            })
             .tag(0)
-            VStack {
-                Text("Page 2 (Placeholder)")
-                    .font(.title)
-                Button("Next") { viewModel.nextPage() }
-                    .padding()
-            }
+            
+            // Placeholder for Page 2
+            OnboardingPage2View(action: {
+                viewModel.nextPage()
+            })
             .tag(1)
             OnboardingPage3View(action: {
                 viewModel.nextPage()
