@@ -29,10 +29,7 @@ struct OnboardingPage1View: View {
                 .padding(.bottom, 30)
                 Spacer()
                 
-                ZStack {
-                    Image("otter")
-
-                }
+                
                 Spacer()
                 
                 Button(action: action) {

@@ -13,44 +13,41 @@ struct OnboardingPage5View: View {
 
     // MARK: - Body
     var body: some View {
-        ZStack {
+        VStack {
+            VStack(alignment: .leading, spacing: 21) {
+                Text("Ready to pause\nbefore you buy?")
+                    .font(.buydeeLargeTitle)
+                    .foregroundStyle(Color.buydee.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Whenever temptation strikes, bring it here. We’ll take another look, together.")
+                    .font(.buydeeBody)
+                    .foregroundStyle(Color.buydee.primaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 32)
+            .padding(.top, 36)
+
+            Spacer()
+
+            Button(action: action) {
+                Text("Let's Get Started")
+                    .font(.buydeeHeadline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.buydee.primaryButton)
+                    .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 48)
+        }
+        .background(
             Image("BGOnboarding5")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-
-            VStack {
-                VStack(alignment: .leading, spacing: 21) {
-                    Text("Let's make your goals\ncount!")
-                        .font(.buydeeTitle1)
-                        .fontWeight(.bold)
-                        .foregroundStyle(Color.buydee.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text("We'll keep your goals in mind\nwhenever you're thinking about buying\nsomething.")
-                        .font(.buydeeHeadline)
-                        .fontWeight(.regular)
-                        .foregroundStyle(Color.buydee.primaryText)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 32)
-                .padding(.top, 70)
-
-                Spacer()
-
-                Button(action: action) {
-                    Text("Let's Get Started")
-                        .font(.buydeeHeadline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.buydee.primaryButton)
-                        .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 100)
-            }
-        }
+        )
     }
 }
 
