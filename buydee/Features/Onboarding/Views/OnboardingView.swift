@@ -12,21 +12,15 @@ struct OnboardingView: View {
         TabView(selection: $viewModel.currentPage) {
             
             // Placeholder for Page 1
-            VStack {
-                Text("Page 1 (Placeholder)")
-                    .font(.title) // Dynamic Type
-                Button("Next") { viewModel.nextPage() }
-                    .padding()
-            }
+            OnboardingPage1View(action: {
+                viewModel.nextPage()
+            })
             .tag(0)
             
             // Placeholder for Page 2
-            VStack {
-                Text("Page 2 (Placeholder)")
-                    .font(.title) // Dynamic Type
-                Button("Next") { viewModel.nextPage() }
-                    .padding()
-            }
+            OnboardingPage2View(action: {
+                viewModel.nextPage()
+            })
             .tag(1)
             
             // Page 3
