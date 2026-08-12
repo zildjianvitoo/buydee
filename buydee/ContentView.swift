@@ -45,6 +45,9 @@ struct ContentView: View {
             chatViewModel.configureUserKnowledgeStore(
                 SwiftDataUserKnowledgeStore(modelContext: modelContext)
             )
+            chatViewModel.configureDecisionHistoryStore(
+                SwiftDataDecisionHistoryStore(modelContext: modelContext)
+            )
         }
     }
 
@@ -88,5 +91,8 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: UserChatKnowledge.self, inMemory: true)
+        .modelContainer(
+            for: [UserChatKnowledge.self, PurchaseDecisionRecord.self],
+            inMemory: true
+        )
 }

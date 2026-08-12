@@ -6,8 +6,9 @@ struct DecisionSummary: Equatable, Sendable {
     let pros: [String]
     let cons: [String]
     let consideredPriceInRupiah: RupiahAmount?
+    let metadata: DecisionMetadata?
 
-    init?(markdown: String) {
+    init?(markdown: String, metadata: DecisionMetadata? = nil) {
         let lines = markdown.components(separatedBy: .newlines)
         var contextLines: [String] = []
         var parsedPros: [String] = []
@@ -69,6 +70,7 @@ struct DecisionSummary: Equatable, Sendable {
         pros = parsedPros
         cons = parsedCons
         consideredPriceInRupiah = parsedPrice
+        self.metadata = metadata
     }
 
     private static let confirmedMidpointMarker = "<!-- BUYDEE_MIDPOINT_CONFIRMED -->"

@@ -19,7 +19,8 @@ struct OpenRouterChatService: ChatServicing {
         to latestMessage: ChatMessage,
         history: [ChatMessage],
         goals: String,
-        userKnowledge: String
+        userKnowledge: String,
+        decisionHistory: [PurchaseDecisionMemory]
     ) async throws -> ChatServiceResponse {
         try Task.checkCancellation()
 
@@ -29,7 +30,8 @@ struct OpenRouterChatService: ChatServicing {
                 content: .text(
                     DeveloperPrompt.render(
                         goals: goals,
-                        userKnowledge: userKnowledge
+                        userKnowledge: userKnowledge,
+                        decisionHistory: decisionHistory
                     )
                 )
             )

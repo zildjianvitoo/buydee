@@ -19,6 +19,6 @@ struct BuydeeApp: App {
                 OnboardingView()
             }
         }
-        .modelContainer(for: UserChatKnowledge.self)
+        .modelContainer(for: [UserChatKnowledge.self, PurchaseDecisionRecord.self])
     }
 }

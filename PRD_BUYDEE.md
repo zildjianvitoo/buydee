@@ -48,13 +48,14 @@ Chatbot menggunakan camera-first entry. Home membuka Camera/Photos flow existing
 - Single-flight request, cancellation, error state, dan pencegahan duplicate send.
 - Transcript hanya hidup selama runtime chat; goals tetap persisten di `UserDefaults`.
 - Satu knowledge ringkas lintas chat disimpan dan terus diperbarui melalui SwiftData.
+- Maksimum 30 keputusan selesai disimpan sebagai record SwiftData terstruktur; maksimum 12 terbaru menjadi knowledge tambahan.
 - API key dibaca dari environment developer dan disimpan ke Keychain.
 
 ### Tidak termasuk MVP
 
 - SwiftData atau persistence untuk transcript/history chat.
 - OCR, object detection, atau image-analysis service terpisah.
-- Membaca isi product page dari URL, web search, tool/function calling, RAG, atau structured output.
+- Membaca isi product page dari URL, web search, tool/function calling, RAG, atau API-enforced structured output.
 - Streaming response.
 - Screenshot Shortcut, Share Extension, link preview/parser, widget, dan reminder sebagai bagian chatbot.
 - Perubahan besar pada navigation Home di luar camera-first entry.
@@ -95,13 +96,15 @@ BuydeeApp
     ├── Models
     │   ├── ChatMessage / ChatRole
     │   ├── DraftImageAttachment
-    │   ├── PurchaseDecision
+    │   ├── PurchaseDecision / DecisionMetadata
+    │   ├── PurchaseDecisionRecord (SwiftData list)
     │   └── UserChatKnowledge (SwiftData single record)
     ├── Services
     │   ├── ChatServicing / OpenRouter service
     │   ├── AIConfiguration
     │   ├── ImageAttachmentProcessor
-    │   └── SwiftDataUserKnowledgeStore
+    │   ├── SwiftDataUserKnowledgeStore
+    │   └── SwiftDataDecisionHistoryStore
     └── Prompts
         └── DeveloperPrompt
 
@@ -117,7 +120,7 @@ Dependency flow:
 ```text
 Home Check It Together → Camera/Photos preview → Use Photo → ChatView + image draft
 Chat View → Chat ViewModel → ChatServicing → OpenRouter REST
-                         ├→ DeveloperPrompt + UserDefaults goals + SwiftData knowledge
+                         ├→ DeveloperPrompt + UserDefaults goals + SwiftData knowledge/decision history
                          ├→ CredentialStore → Keychain
                          └→ ImageAttachmentProcessor
 
@@ -209,7 +212,7 @@ Runtime state
 - navigation destination
 ```
 
-Transcript dan attachment tidak disimpan ke `UserDefaults`, SwiftData, file, atau Keychain. New chat/finish menghapus transcript dan draft setelah membatalkan request aktif. Yang dipersistenkan hanya satu `UserChatKnowledge`: context plain-text maksimal 600 karakter berisi fakta stabil yang dinyatakan user dan berguna lintas sesi, bukan salinan transcript.
+Transcript dan attachment tidak disimpan ke `UserDefaults`, SwiftData, file, atau Keychain. New chat/finish menghapus transcript dan draft setelah membatalkan request aktif. Persistence chat terdiri dari dua lapis: satu `UserChatKnowledge` berisi context global plain-text maksimal 600 karakter, serta daftar `PurchaseDecisionRecord` terstruktur untuk keputusan yang benar-benar selesai.
 
 | Data | Storage | Contract |
 |---|---|---|
@@ -217,11 +220,16 @@ Transcript dan attachment tidak disimpan ke `UserDefaults`, SwiftData, file, ata
 | `userGoals` | `UserDefaults` | Context ringan untuk developer prompt. |
 | `hasSeenCameraGuide` | `UserDefaults` | Existing camera guide state. |
 | `UserChatKnowledge` | SwiftData | Satu record cumulative; diperbarui dari marker internal pada response dan digunakan sebagai knowledge tambahan chat berikutnya. |
+| `PurchaseDecisionRecord` | SwiftData | Satu record per session yang selesai setelah tap BUY/BYE; dedupe berdasarkan session ID dan dibatasi 30 record terbaru. |
 | OpenRouter API key | Keychain | Credential saja; tidak boleh dicatat ke log. |
 
-Goals dan knowledge di-trim lalu karakter XML (`&`, `<`, `>`, quote) di-escape sebelum dimasukkan ke `<user_context>`. Keduanya adalah data tidak tepercaya. Jika kosong, render placeholder internal; developer prompt melarang model menyebut placeholder tersebut.
+Goals, knowledge, dan setiap field decision history di-trim lalu karakter XML (`&`, `<`, `>`, quote) di-escape sebelum dimasukkan ke `<user_context>`. Semuanya adalah data tidak tepercaya. Jika kosong, render placeholder internal; developer prompt melarang model menyebut placeholder tersebut.
 
 Setiap response model wajib berakhir dengan satu marker `<!-- BUYDEE_USER_KNOWLEDGE: ... -->`. Marker membawa versi lengkap knowledge terbaru hasil merge dengan context lama, diparse dan dibatasi maksimal 600 karakter, lalu dihapus sebelum response menjadi `ChatMessage`. Marker kosong berarti knowledge dikosongkan; response tanpa marker tidak mengubah record. Mekanisme ini memakai request chat yang sama—tidak membuat request AI tambahan. Store mempertahankan satu record dan menghapus duplicate record bila ditemukan.
+
+Summary valid juga membawa marker JSON internal `BUYDEE_DECISION_METADATA` sebelum marker knowledge. Aplikasi menghapus marker dari content visual dan menaruh metadata terparse pada assistant `ChatMessage`. Ketika user tap BUY/BYE, ViewModel menggabungkan metadata dengan harga yang sudah divalidasi `DecisionSummary`, outcome, session ID, dan timestamp lalu melakukan upsert. Field yang disimpan: barang, kategori opsional, harga Rupiah terpakai, teks harga asli, flag estimasi, batas rentang opsional, outcome, waktu, ringkasan konteks/PROS/CONS, dan goal relevan opsional. Jika metadata AI tidak lengkap, Summary tetap dapat dipilih dan field ringkasan memakai fallback lokal; kegagalan persistence tidak memblokir completion navigation.
+
+Store mempertahankan maksimum 30 record terbaru. Hanya maksimum 12 record terbaru—tanpa transcript atau gambar—yang dirender sebagai `<decision_history>` untuk request berikutnya. Keputusan lama adalah referensi ringan, bukan instruksi dan bukan penentu keputusan saat ini.
 
 ## 7. Konfigurasi OpenRouter
 
@@ -236,7 +244,7 @@ Setiap response model wajib berakhir dengan satu marker `<!-- BUYDEE_USER_KNOWLE
 | Timeout | 90 seconds |
 | Streaming | Disabled |
 | Temperature/top-p | Provider/model default |
-| Tools/structured output | None |
+| Tools/API-enforced structured output | None; metadata internal memakai marker JSON dalam response yang sama. |
 
 `AIConfiguration.default` menjadi source of truth untuk nilai konfigurasi. Gunakan REST langsung; Gemini SDK dan endpoint Gemini tidak digunakan.
 
@@ -423,6 +431,7 @@ Resolver redirect non-AI, Share Extension, dan rich link parsing adalah roadmap 
 - API key tidak boleh berada di Swift source, plist, asset, test fixture, log, screenshot, README value, atau commit.
 - Jangan log request body karena berisi transcript, goals, dan mungkin base64 image.
 - Goals disimpan lokal; transcript dan image runtime tidak dipersistensikan dalam MVP.
+- Decision history lokal tidak menyimpan transcript, image, response penuh, data pembayaran, atau data sensitif lain.
 - Keychain mengamankan storage lokal, bukan menjamin secret tidak dapat diekstrak dari distributed client. Production memerlukan backend proxy dan kontrol abuse.
 
 ## 15. Acceptance criteria
@@ -441,6 +450,7 @@ Resolver redirect non-AI, Share Extension, dan rich link parsing adalah roadmap 
 - [ ] Developer prompt penuh dikirim dengan role `developer` pada setiap request.
 - [ ] Maksimal 12 history messages dikirim berurutan sebelum latest message.
 - [ ] Goals terkini di-trim, di-escape, dan dianggap data tidak tepercaya.
+- [ ] Maksimum 12 keputusan terbaru di-escape dan dikirim sebagai data tidak tepercaya, bukan instruksi.
 - [ ] Response non-streaming; hanya satu request dapat aktif.
 - [ ] Cancellation mengabaikan late response dan double tap tidak menduplikasi send.
 - [ ] Transcript hilang pada new chat/finish, sedangkan goals tersedia setelah relaunch.
@@ -461,6 +471,8 @@ Resolver redirect non-AI, Share Extension, dan rich link parsing adalah roadmap 
 - [ ] Tap decision mengirim exact user message dan hanya memicu Phase E sekali.
 - [ ] Tap BUY/BYE mengirim user message sekali dan langsung membuka completion screen yang sesuai.
 - [ ] Kedua outcome memakai copy netral.
+- [ ] Tap BUY/BYE membuat atau memperbarui tepat satu decision record untuk session tersebut; chat yang belum selesai tidak disimpan.
+- [ ] Decision history dibatasi 30 record dan tidak berisi transcript atau image.
 
 ### Verification scenarios
 

@@ -5,6 +5,7 @@ protocol ChatServicing: Sendable {
         to latestMessage: ChatMessage,
         history: [ChatMessage],
         goals: String,
-        userKnowledge: String
+        userKnowledge: String,
+        decisionHistory: [PurchaseDecisionMemory]
     ) async throws -> ChatServiceResponse
 }
