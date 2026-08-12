@@ -2,21 +2,21 @@ import Foundation
 import SwiftUI
 
 struct DecisionSummary: Equatable, Sendable {
-    let context: String
-    let pros: [String]
-    let cons: [String]
+    let content: String
     let consideredPriceInRupiah: RupiahAmount?
     let metadata: DecisionMetadata?
 
-    init?(markdown: String, metadata: DecisionMetadata? = nil) {
-        let lines = markdown.components(separatedBy: .newlines)
-        var contextLines: [String] = []
-        var parsedPros: [String] = []
-        var parsedCons: [String] = []
+    init?(
+        markdown: String,
+        metadata: DecisionMetadata? = nil,
+        requiresChoicePrompt: Bool = true
+    ) {
+        let normalizedMarkdown = markdown.replacing("\r\n", with: "\n")
+        var contentLines: [String] = []
+        var hasChoicePrompt = false
         var hasConfirmedMidpointMarker = false
-        var section = 0
 
-        for rawLine in lines {
+        for rawLine in normalizedMarkdown.components(separatedBy: "\n") {
             let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
             let normalizedLine = line.lowercased()
 
@@ -24,74 +24,78 @@ struct DecisionSummary: Equatable, Sendable {
                 hasConfirmedMidpointMarker = true
                 continue
             }
-            if normalizedLine == "**pros:**" {
-                section = 1
+            if normalizedLine.contains("**buy**"),
+               normalizedLine.contains("**bye**") {
+                hasChoicePrompt = true
                 continue
             }
-            if normalizedLine == "**cons:**" {
-                section = 2
-                continue
-            }
-            if normalizedLine.contains("**buy**") && normalizedLine.contains("**bye**") {
-                continue
-            }
-            guard !line.isEmpty else { continue }
-
-            guard line.hasPrefix("- ") else {
-                if section == 0,
-                   !normalizedLine.hasPrefix("sebentar aku rangkum") {
-                    contextLines.append(line)
-                }
-                continue
-            }
-
-            let cleanedLine = String(line.dropFirst(2))
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !cleanedLine.isEmpty else { continue }
-
-            switch section {
-            case 1:
-                parsedPros.append(cleanedLine)
-            case 2:
-                parsedCons.append(cleanedLine)
-            default:
-                continue
-            }
+            contentLines.append(rawLine)
         }
 
-        guard !parsedPros.isEmpty, !parsedCons.isEmpty else { return nil }
-        let parsedContext = contextLines.joined(separator: " ")
-        let parsedPrice = RupiahCurrency.firstAmount(in: parsedContext)
-        guard parsedPrice?.isEstimated != true || hasConfirmedMidpointMarker else {
+        guard !requiresChoicePrompt || hasChoicePrompt else { return nil }
+        let parsedContent = contentLines
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !parsedContent.isEmpty else { return nil }
+
+        let rangePrice = Self.confirmedRangePrice(
+            from: metadata,
+            hasConfirmedMidpointMarker: hasConfirmedMidpointMarker
+        )
+        if metadata?.priceRangeLower != nil || metadata?.priceRangeUpper != nil {
+            guard rangePrice != nil else { return nil }
+        }
+
+        let metadataPrice: RupiahAmount?
+        if let originalPriceText = metadata?.originalPriceText {
+            metadataPrice = RupiahCurrency.firstAmount(in: originalPriceText)
+        } else {
+            metadataPrice = nil
+        }
+
+        content = parsedContent
+        consideredPriceInRupiah = rangePrice
+            ?? RupiahCurrency.firstAmount(in: parsedContent)
+            ?? metadataPrice
+        self.metadata = metadata
+    }
+
+    private static func confirmedRangePrice(
+        from metadata: DecisionMetadata?,
+        hasConfirmedMidpointMarker: Bool
+    ) -> RupiahAmount? {
+        guard hasConfirmedMidpointMarker,
+              let lowerBound = metadata?.priceRangeLower,
+              let upperBound = metadata?.priceRangeUpper,
+              lowerBound > 0,
+              upperBound >= lowerBound else {
             return nil
         }
 
-        context = parsedContext
-        pros = parsedPros
-        cons = parsedCons
-        consideredPriceInRupiah = parsedPrice
-        self.metadata = metadata
+        let midpoint = lowerBound + ((upperBound - lowerBound) / 2)
+        return RupiahAmount(value: midpoint, isEstimated: true)
     }
 
     private static let confirmedMidpointMarker = "<!-- BUYDEE_MIDPOINT_CONFIRMED -->"
 }
 
+#if DEBUG
 #Preview("Decision Summary") {
     if let summary = DecisionSummary(
         markdown: """
-        Sebentar aku rangkum dulu ya—biar kamu bisa melihat seluruh gambarannya sebelum memilih.
+        Oke, kayaknya udah kebayang sekarang. Kamu masih kepikiran **iPhone 17 seharga Rp17 juta** karena ponselmu rusak dan performanya memang menarik, tapi harganya juga masih terasa berat karena dana itu sedang kamu pertimbangkan untuk holiday fund.
 
-        Kamu sedang mempertimbangkan **iPhone 17 seharga Rp17 juta** karena ponsel yang sekarang rusak.
-
-        **PROS:**
-        - Performa iPhone 17 menarik buat kamu.
-        - Ponsel baru akan sering dipakai sehari-hari.
-        **CONS:**
-        - Harganya terasa terlalu mahal.
-        - Dana tersebut juga sedang dipertimbangkan untuk **holiday fund**.
-
-        Kamu mau pilih **BUY** atau **BYE**?
-        """
+        Kalau buat sekarang, kamu lebih condong ke **BUY** atau **BYE**?
+        """,
+        metadata: DecisionMetadata(
+            productName: "iPhone 17",
+            productCategory: "Smartphone",
+            originalPriceText: "Rp17 juta",
+            contextSummary: "Ponsel sekarang rusak dan harga masih terasa berat.",
+            prosSummary: "Performa menarik dan akan sering dipakai.",
+            consSummary: "Harga bersaing dengan holiday fund.",
+            relatedGoal: "Holiday fund"
+        )
     ) {
         ChatSummaryCard(
             summary: summary,
@@ -102,3 +106,4 @@ struct DecisionSummary: Equatable, Sendable {
         .background(Color.buydee.chatBackground)
     }
 }
+#endif

@@ -4,6 +4,7 @@ struct ChatServiceResponse: Equatable, Sendable {
     let content: String
     let updatedUserKnowledge: String?
     let decisionMetadata: DecisionMetadata?
+    let selectedDecision: PurchaseDecision?
 
     init(rawContent: String) {
         var visibleContent = rawContent
@@ -15,6 +16,10 @@ struct ChatServiceResponse: Equatable, Sendable {
             from: &visibleContent,
             opening: Self.decisionMarkerOpening
         )
+        let selectedDecisionPayload = Self.removeMarker(
+            from: &visibleContent,
+            opening: Self.selectedDecisionMarkerOpening
+        )
 
         content = visibleContent.trimmingCharacters(in: .whitespacesAndNewlines)
         updatedUserKnowledge = knowledgePayload.map { payload in
@@ -24,6 +29,9 @@ struct ChatServiceResponse: Equatable, Sendable {
             return String(normalizedPayload.prefix(Self.maximumKnowledgeLength))
         }
         decisionMetadata = decisionPayload.flatMap(DecisionMetadata.init(markerPayload:))
+        selectedDecision = selectedDecisionPayload.flatMap { payload in
+            PurchaseDecision(rawValue: payload.lowercased())
+        }
     }
 
     private static func removeMarker(from content: inout String, opening: String) -> String? {
@@ -51,6 +59,7 @@ struct ChatServiceResponse: Equatable, Sendable {
 
     private static let knowledgeMarkerOpening = "<!-- BUYDEE_USER_KNOWLEDGE:"
     private static let decisionMarkerOpening = "<!-- BUYDEE_DECISION_METADATA:"
+    private static let selectedDecisionMarkerOpening = "<!-- BUYDEE_SELECTED_DECISION:"
     private static let markerClosing = "-->"
     private static let maximumKnowledgeLength = 600
 }

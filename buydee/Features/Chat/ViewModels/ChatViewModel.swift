@@ -9,6 +9,7 @@ final class ChatViewModel {
     var draftImage: DraftImageAttachment?
     var isGenerating = false
     var errorMessage: String?
+    private(set) var completedDecision: PurchaseDecision?
 
     @ObservationIgnored private let service: any ChatServicing
     @ObservationIgnored private let imageProcessor: ImageAttachmentProcessor
@@ -153,6 +154,10 @@ final class ChatViewModel {
         isGenerating = false
     }
 
+    func consumeCompletedDecision() {
+        completedDecision = nil
+    }
+
     func attachImageData(_ data: Data) {
         guard canAttachImage else { return }
 
@@ -189,6 +194,7 @@ final class ChatViewModel {
         errorMessage = nil
         lastRequestedMessage = nil
         lastRequestHistory = []
+        completedDecision = nil
         sessionID = UUID()
     }
 
@@ -259,10 +265,12 @@ final class ChatViewModel {
                     ChatMessage(
                         role: .assistant,
                         content: response.content,
-                        decisionMetadata: response.decisionMetadata
+                        decisionMetadata: response.decisionMetadata,
+                        selectedDecision: response.selectedDecision
                     )
                 )
                 self.persistUserKnowledge(response.updatedUserKnowledge)
+                self.handleEarlyDecision(from: response)
                 self.lastRequestedMessage = nil
                 self.lastRequestHistory = []
             } catch is CancellationError {
@@ -328,17 +336,17 @@ final class ChatViewModel {
             decidedAt: .now,
             contextSummary: Self.normalized(
                 metadata?.contextSummary,
-                fallback: summary.context,
+                fallback: summary.content,
                 maximumLength: 240
             ),
             prosSummary: Self.normalized(
                 metadata?.prosSummary,
-                fallback: summary.pros.joined(separator: "; "),
+                fallback: "",
                 maximumLength: 200
             ),
             consSummary: Self.normalized(
                 metadata?.consSummary,
-                fallback: summary.cons.joined(separator: "; "),
+                fallback: "",
                 maximumLength: 200
             ),
             relatedGoal: Self.normalizedOptional(
@@ -355,6 +363,21 @@ final class ChatViewModel {
         } catch {
             errorMessage = Self.decisionHistorySaveErrorMessage
         }
+    }
+
+    private func handleEarlyDecision(from response: ChatServiceResponse) {
+        guard let selectedDecision = response.selectedDecision,
+              let metadata = response.decisionMetadata,
+              let summary = DecisionSummary(
+                markdown: response.content,
+                metadata: metadata,
+                requiresChoicePrompt: false
+              ) else {
+            return
+        }
+
+        persistDecision(summary, decision: selectedDecision)
+        completedDecision = selectedDecision
     }
 
     private static func normalized(
@@ -406,5 +429,5 @@ final class ChatViewModel {
     private static let promptDecisionHistoryLimit = 12
 
     private static let earlySummaryRequest =
-        "Aku siap menentukan pilihan sekarang. Jika harga berupa rentang dan nilai tengahnya belum aku konfirmasi, tanyakan konfirmasinya dulu dan jangan buat Summary. Jika harga sudah valid, rangkum percakapan ini sesuai format Summary dan tawarkan BUY atau BYE secara netral."
+        "Aku siap menentukan pilihan sekarang. Jika harga berupa rentang dan nilai tengahnya belum aku konfirmasi, tanyakan konfirmasinya dulu. Jika harganya sudah valid, rangkum secara natural dan singkat sesuai aturan Summary, lalu tawarkan BUY atau BYE secara netral."
 }

@@ -58,6 +58,11 @@ struct ChatView: View {
                     .accessibilityHint("Cancels the active response and returns home")
             }
         }
+        .onChange(of: viewModel.completedDecision) { _, decision in
+            guard let decision else { return }
+            viewModel.consumeCompletedDecision()
+            onDecision(decision)
+        }
     }
 
     private func chooseDecision(_ decision: PurchaseDecision) {

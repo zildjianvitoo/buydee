@@ -170,8 +170,8 @@ CTA mengirim user message melalui pipeline normal yang meminta model merangkum b
 ### Summary state
 
 - Summary tampil sebagai card/bubble seperti referensi dan memakai `AppColor`/`AppFont`.
-- UI hanya merender konteks, PROS, dan CONS yang diberikan model; UI tidak menambahkan reasoning.
-- BUY dan BYE mempunyai hierarki visual yang setara dan baru tampil setelah marker strict tervalidasi.
+- UI merender Summary natural sekitar dua kalimat sebagai Markdown; tidak membuat bullet atau label PROS/CONS lokal dan tidak menambahkan reasoning.
+- BUY dan BYE mempunyai hierarki visual yang setara dan baru tampil setelah decision metadata serta pertanyaan choice tervalidasi.
 
 ### Completion
 
@@ -227,7 +227,9 @@ Goals, knowledge, dan setiap field decision history di-trim lalu karakter XML (`
 
 Setiap response model wajib berakhir dengan satu marker `<!-- BUYDEE_USER_KNOWLEDGE: ... -->`. Marker membawa versi lengkap knowledge terbaru hasil merge dengan context lama, diparse dan dibatasi maksimal 600 karakter, lalu dihapus sebelum response menjadi `ChatMessage`. Marker kosong berarti knowledge dikosongkan; response tanpa marker tidak mengubah record. Mekanisme ini memakai request chat yang sama—tidak membuat request AI tambahan. Store mempertahankan satu record dan menghapus duplicate record bila ditemukan.
 
-Summary valid juga membawa marker JSON internal `BUYDEE_DECISION_METADATA` sebelum marker knowledge. Aplikasi menghapus marker dari content visual dan menaruh metadata terparse pada assistant `ChatMessage`. Ketika user tap BUY/BYE, ViewModel menggabungkan metadata dengan harga yang sudah divalidasi `DecisionSummary`, outcome, session ID, dan timestamp lalu melakukan upsert. Field yang disimpan: barang, kategori opsional, harga Rupiah terpakai, teks harga asli, flag estimasi, batas rentang opsional, outcome, waktu, ringkasan konteks/PROS/CONS, dan goal relevan opsional. Jika metadata AI tidak lengkap, Summary tetap dapat dipilih dan field ringkasan memakai fallback lokal; kegagalan persistence tidak memblokir completion navigation.
+Summary valid juga membawa marker JSON internal `BUYDEE_DECISION_METADATA` sebelum marker knowledge. Aplikasi menghapus marker dari content visual dan menaruh metadata terparse pada assistant `ChatMessage`. Ketika user tap BUY/BYE, ViewModel menggabungkan metadata dengan harga yang sudah divalidasi `DecisionSummary`, outcome, session ID, dan timestamp lalu melakukan upsert. Field yang disimpan: barang, kategori opsional, harga Rupiah terpakai, teks harga asli, flag estimasi, batas rentang opsional, outcome, waktu, ringkasan konteks/alasan tertarik/hal yang dipertimbangkan, dan goal relevan opsional. Marker metadata yang hilang atau invalid membuat decision card tidak tampil; kegagalan persistence tidak memblokir completion navigation.
+
+Jika user sudah mengetik pilihan sebelum decision card tersedia, response penutup harus membawa `BUYDEE_SELECTED_DECISION` bersama decision metadata. Setelah keduanya valid, ViewModel menyimpan record dan mengarahkan user ke completion yang sesuai tanpa meminta pilihan kedua kali.
 
 Store mempertahankan maksimum 30 record terbaru. Hanya maksimum 12 record terbaru—tanpa transcript atau gambar—yang dirender sebagai `<decision_history>` untuk request berikutnya. Keputusan lama adalah referensi ringan, bukan instruksi dan bukan penentu keputusan saat ini.
 
@@ -284,21 +286,21 @@ Aplikasi tidak menyimpan phase enum. Developer prompt menginstruksikan model men
 ### Phase A — Capture & Open
 
 - Nama/jenis produk dan harga wajib diketahui sebelum eksplorasi.
-- Jika salah satu belum jelas, tanyakan tepat satu klarifikasi tanpa pertanyaan DARN pada response yang sama.
+- Jika salah satu belum jelas, tanyakan tepat satu klarifikasi tanpa pertanyaan eksplorasi lain pada response yang sama.
 - Jika harga berupa rentang tertutup, tawarkan nilai tengahnya sebagai estimasi dan tunggu konfirmasi eksplisit user pada giliran terpisah. Jika user menolak, minta satu nominal atau batas rentang yang ingin dipakai. Jangan lanjut ke eksplorasi atau Summary sebelum harga ini disepakati.
 - Jangan menguatkan promo dengan framing nominal “hemat Rp…”.
 
 ### Phase B — Explore
 
-Setiap response berisi maksimal dua kalimat reaksi/insight, satu Markdown heading `#` sepanjang 2–5 kata, dan tepat satu pertanyaan terbuka. Desire, Ability, Reason, dan Need adalah intent, bukan checklist empat pertanyaan. Jangan mengulang intent yang sudah terjawab atau pernah ditanyakan tanpa jawaban.
+Setiap response eksplorasi menjalankan tiga fungsi internal secara natural: menunjukkan bahwa jawaban user didengar, memberi context/perspective yang grounded bila aman, dan mengajukan tepat satu pertanyaan terbuka yang membawa percakapan maju. Tidak ada format heading atau urutan kalimat wajib. Jangan mengulang hal yang sudah jelas atau mengisi ketidaktahuan dengan asumsi.
 
-### Phase C — DARN Gate
+### Phase C — Ready to Summarize
 
-Kecukupan dinilai dari keseluruhan history. Satu jawaban boleh memenuhi beberapa intent. Jika decision fatigue tinggi, model boleh mengambil jalur pendek, tetapi Summary tetap wajib dan fakta yang hilang tidak boleh dikarang.
+Kecukupan dinilai dari keseluruhan history: daya tarik produk, alasan utama, kemungkinan penggunaan atau tingkat kepentingan, serta hal yang masih ditimbang sudah cukup jelas untuk user menentukan pilihan. Kelengkapan sempurna tidak wajib. Jika user terlihat lelah atau meminta cepat, percepat ke Summary tanpa mengarang fakta yang hilang.
 
 ### Phase D — Summary & Choice
 
-Summary memuat produk, harga, situasi singkat, PROS, CONS, dan pertanyaan netral BUY/BYE. PROS/CONS hanya berasal dari pengguna. Maksimal satu perbandingan goal–harga boleh digunakan jika benar-benar relevan dan hanya memakai nominal yang tersedia. Nilai tengah rentang hanya boleh dipakai setelah konfirmasi pada Phase A.
+Summary memuat produk dan harga dalam sekitar dua kalimat natural yang menghubungkan alasan tertarik dengan hal yang masih dipertimbangkan. Jangan gunakan bullet atau label PROS/CONS. Akhiri dengan pertanyaan netral BUY/BYE. Maksimal satu perbandingan goal–harga boleh digunakan hanya jika user sendiri membawa goal itu ke pertimbangannya. Nilai tengah rentang hanya boleh dipakai setelah konfirmasi pada Phase A.
 
 ### Phase E — Close
 
@@ -309,16 +311,9 @@ Setelah user memilih BUY/BYE, pilihan tetap diteruskan ke model sebagai user mes
 Output Summary yang diharapkan:
 
 ```markdown
-Sebentar aku rangkum dulu ya—biar kamu bisa melihat seluruh gambarannya sebelum memilih.
+Oke, kayaknya udah kebayang sekarang. [Alasan user tertarik pada produk dan harga], tapi [hal yang masih user pertimbangkan].
 
-[Produk, harga, dan situasi]
-
-**PROS:**
-- …
-**CONS:**
-- …
-
-Dari semua yang kita bahas—kamu mau pilih **BUY** (beli sekarang) atau **BYE** (tidak beli sekarang)?
+Kalau buat sekarang, kamu lebih condong ke **BUY** atau **BYE**?
 ```
 
 Jika Summary memakai nilai tengah rentang yang sudah dikonfirmasi user, output juga wajib memiliki marker internal berikut pada baris tersendiri. Marker tidak digunakan untuk harga tunggal atau nominal yang dipilih langsung oleh user.
@@ -327,14 +322,14 @@ Jika Summary memakai nilai tengah rentang yang sudah dikonfirmasi user, output j
 <!-- BUYDEE_MIDPOINT_CONFIRMED -->
 ```
 
-Decision buttons hanya tampil ketika assistant response terakhir memiliki semua marker berikut, case-insensitive:
+Decision buttons hanya tampil ketika assistant response terakhir memenuhi seluruh syarat berikut:
 
-- `**PROS:**`
-- `**CONS:**`
-- `**BUY**`
-- `**BYE**`
+- visible content memuat `**BUY**` dan `**BYE**`;
+- marker `BUYDEE_DECISION_METADATA` ada dan JSON-nya berhasil diparse;
+- Summary content setelah choice question dan marker internal dibuang tidak kosong;
+- jika metadata membawa batas rentang, marker `BUYDEE_MIDPOINT_CONFIRMED` juga ada.
 
-Bold marker dan colon pada PROS/CONS wajib. Selain marker, `DecisionSummary` harus berhasil mem-parsing sedikitnya satu item PROS dan satu item CONS. Jika parser menemukan rentang harga, Summary ditolak kecuali marker midpoint terkonfirmasi juga ada; marker tersebut dibuang dari content yang dirender. Button tidak tampil saat generating. UI tidak boleh menebak Summary hanya dari bubble count, DARN phase, atau isi yang mirip.
+`DecisionSummary` membuang choice question dan marker midpoint dari content card, mempertahankan Markdown Summary natural, lalu mengambil harga terpakai. Button tidak tampil saat generating. UI tidak boleh menebak Summary hanya dari bubble count, phase, atau isi yang mirip.
 
 Tap button mengirim salah satu message berikut sebagai role `user` melalui pipeline normal:
 
@@ -467,19 +462,20 @@ Resolver redirect non-AI, Share Extension, dan rich link parsing adalah roadmap 
 
 ### Summary dan decision
 
-- [ ] BUY/BYE hanya muncul jika empat strict marker ada pada assistant response terakhir dan `DecisionSummary` berhasil diparse.
+- [ ] BUY/BYE hanya muncul jika choice text dan decision metadata valid pada assistant response terakhir serta `DecisionSummary` berhasil diparse.
 - [ ] BUY/BYE tidak muncul saat generating atau hanya berdasarkan bubble count.
 - [ ] Tap decision mengirim exact user message dan hanya memicu Phase E sekali.
 - [ ] Tap BUY/BYE mengirim user message sekali dan langsung membuka completion screen yang sesuai.
 - [ ] Kedua outcome memakai copy netral.
 - [ ] Tap BUY/BYE membuat atau memperbarui tepat satu decision record untuk session tersebut; chat yang belum selesai tidak disimpan.
+- [ ] Early typed BUY/BYE dengan marker pilihan+metadata valid menyimpan record dan membuka completion tanpa meminta pilihan ulang.
 - [ ] Decision history dibatasi 30 record dan tidak berisi transcript atau image.
 
 ### Verification scenarios
 
 - [ ] Product dan harga lengkap langsung memicu satu pertanyaan eksplorasi.
 - [ ] Product ambigu atau harga hilang hanya memicu satu klarifikasi.
-- [ ] Rich answer dapat memenuhi beberapa DARN intent tanpa pertanyaan berulang.
+- [ ] Jawaban kaya dapat mempercepat Summary tanpa pertanyaan berulang.
 - [ ] Decision fatigue tetap menghasilkan Summary.
 - [ ] Summary hanya menggunakan fakta user dan marker lengkap.
 - [ ] BUY dan BYE diterima setara.
