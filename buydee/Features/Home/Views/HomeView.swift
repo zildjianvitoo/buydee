@@ -89,7 +89,7 @@ struct HomeView: View {
             Color.buydee.canvasBackground
                 .frame(height: geometry.size.height * 0.55)
 
-            Color.buydee.secondaryBackground
+            Color.buydee.background
         }
         .ignoresSafeArea()
     }
