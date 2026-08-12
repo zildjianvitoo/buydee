@@ -46,11 +46,11 @@ struct HomeView: View {
                 Image("otter")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 120, height: 180)
+                    .frame(width: 229, height: 225)
                     .accessibilityLabel("Buydee otter mascot")
                     .position(
                         x: geometry.size.width / 2,
-                        y: geometry.size.height * 0.53
+                        y: geometry.size.height * 0.5
                     )
 
                 VStack(spacing: 20) {
