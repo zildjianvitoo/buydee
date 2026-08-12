@@ -5,7 +5,8 @@
 import SwiftUI
 import UserNotifications
 @Observable
-class OnboardingViewModel {
+@MainActor
+final class OnboardingViewModel {
     var currentPage: Int = 0
     let totalPages: Int = 4
     var selectedGoal: OnboardingGoal? = nil
@@ -30,10 +31,19 @@ class OnboardingViewModel {
         }
     }
     func completeOnboarding() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            DispatchQueue.main.async {
-                UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-            }
+        let goals = if selectedGoal == .others {
+            customGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            selectedGoal?.rawValue ?? ""
+        }
+
+        UserDefaults.standard.set(goals, forKey: "userGoals")
+
+        Task {
+            _ = try? await UNUserNotificationCenter.current().requestAuthorization(
+                options: [.alert, .sound, .badge]
+            )
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         }
     }
 }

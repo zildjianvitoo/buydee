@@ -43,4 +43,20 @@ struct BuydeeColors {
     let cardBackground = Color.white
     let canvasBackground = Color(hex: "#FCF8F1")
     let secondaryBackground = Color(hex: "#F5F5F5") // Added fallback in case it's missing
+
+    // MARK: - Chat
+
+    let oliveGreen = Color(hex: "#778100")
+    let deepOliveGreen = Color(hex: "#404503")
+    let earthyOlive = Color(hex: "#60480F")
+    let coolGray = Color(hex: "#F2F2F7")
+    let mutedReddishBrown = Color(hex: "#6C423A")
+
+    let chatBackground = Color(hex: "#FAF7F2")
+    let chatComposerBackground = Color(hex: "#F1F1F4")
+    let chatSummaryBackground = Color(hex: "#F2B0A6")
+    let chatMascotPlaceholder = Color(hex: "#657184")
+    let chatByeBackground = Color(hex: "#836625")
+    let chatError = Color(hex: "#9D2F2F")
+    let chatCodeBackground = Color.black.opacity(0.22)
 }
