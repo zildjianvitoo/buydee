@@ -6,6 +6,7 @@ import SwiftUI
 struct OnboardingPage3View: View {
     // MARK: - Properties
     var action: () -> Void
+    @State private var carouselIndex = 0
 
     // MARK: - Body
     var body: some View {
@@ -19,21 +20,30 @@ struct OnboardingPage3View: View {
                 .foregroundStyle(Color.buydee.primaryText)
                 .padding(.trailing, 20)
             Spacer()
-            ZStack {
-                HStack(spacing: 20) {
-                    RoundedRectangle(cornerRadius: BuydeeRadius.medium)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 140, height: 160)
-                    RoundedRectangle(cornerRadius: BuydeeRadius.medium)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 140, height: 160)
+            
+            VStack(spacing: 32) {
+                TabView(selection: $carouselIndex) {
+                    ForEach(0..<3, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: BuydeeRadius.medium)
+                            .fill(Color.buydee.background)
+                            .frame(maxWidth: .infinity, maxHeight: 300)
+                            .padding(.horizontal, 8)
+                            .tag(index)
+                    }
                 }
-                RoundedRectangle(cornerRadius: BuydeeRadius.medium)
-                    .fill(Color.gray.opacity(0.45))
-                    .frame(width: 160, height: 180)
-                    .offset(y: 40)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: 300)
+                
+                // Custom Page Indicators
+                HStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Circle()
+                            .fill(carouselIndex == index ? Color.buydee.primaryButton : Color.buydee.background)
+                            .frame(width: 8, height: 8)
+                    }
+                }
             }
-            .frame(maxWidth: .infinity)
+            
             Spacer()
             Button(action: action) {
                 Text("Got it")
@@ -48,7 +58,7 @@ struct OnboardingPage3View: View {
         }
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.buydee.cardBackground)
+        .background(Color.buydee.canvasBackground)
     }
 }
 #Preview {

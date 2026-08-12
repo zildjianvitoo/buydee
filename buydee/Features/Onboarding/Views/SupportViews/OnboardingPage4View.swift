@@ -14,7 +14,7 @@ struct OnboardingPage4View: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
-                Color.buydee.cardBackground.ignoresSafeArea()
+                Color.buydee.canvasBackground.ignoresSafeArea()
                 
                 Text("Before we go,")
                     .font(.buydeeLargeTitle)
@@ -60,6 +60,8 @@ struct OnboardingPage4View: View {
                                             customText: $viewModel.customGoalText,
                                             isKeyboardVisible: $isKeyboardVisible
                                         ) {
+                                            isKeyboardVisible = false
+                                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                             viewModel.selectGoal(goal)
                                         }
                                     }
@@ -118,10 +120,10 @@ struct GoalSelectionRow: View {
                 HStack(spacing: 16) {
                     Image(systemName: goal.iconName)
                         .font(.title3)
-                        .foregroundStyle(Color.buydee.primaryText)
+                        .foregroundStyle(Color.buydee.primaryIcon)
                         .frame(width: 24)
                     Text(goal.rawValue)
-                        .font(.buydeeBody)
+                        .font(.buydeeHeadline)
                         .foregroundStyle(Color.buydee.primaryText)
                     Spacer()
                 }
