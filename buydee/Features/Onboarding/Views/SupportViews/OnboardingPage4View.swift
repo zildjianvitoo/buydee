@@ -7,7 +7,7 @@ struct OnboardingPage4View: View {
     @Bindable var viewModel: OnboardingViewModel
     var action: () -> Void
     
-    @FocusState private var focusedField: OnboardingGoal?
+    @State private var isKeyboardVisible: Bool = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -56,7 +56,7 @@ struct OnboardingPage4View: View {
                                             goal: goal,
                                             isSelected: viewModel.selectedGoal == goal,
                                             customText: $viewModel.customGoalText,
-                                            focusedField: $focusedField
+                                            isKeyboardVisible: $isKeyboardVisible
                                         ) {
                                             viewModel.selectGoal(goal)
                                         }
@@ -91,8 +91,8 @@ struct OnboardingPage4View: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
             }
-            .offset(y: focusedField != nil ? -180 : 0)
-            .animation(.easeOut(duration: 0.25), value: focusedField)
+            .offset(y: isKeyboardVisible ? -180 : 0)
+            .animation(.easeOut(duration: 0.25), value: isKeyboardVisible)
         }
         .ignoresSafeArea(.keyboard)
     }
@@ -102,8 +102,10 @@ struct GoalSelectionRow: View {
     let goal: OnboardingGoal
     let isSelected: Bool
     @Binding var customText: String
-    var focusedField: FocusState<OnboardingGoal?>.Binding
+    @Binding var isKeyboardVisible: Bool
     var action: () -> Void
+    
+    @FocusState private var isFocused: Bool
     var body: some View {
         VStack(spacing: 0) {
             Button(action: action) {
@@ -125,7 +127,10 @@ struct GoalSelectionRow: View {
             .buttonStyle(.plain)
             if isSelected {
                 TextField(goal == .others ? "Something else..." : "Name your goal...", text: $customText)
-                    .focused(focusedField, equals: goal)
+                    .focused($isFocused)
+                    .onChange(of: isFocused) { _, newValue in
+                        isKeyboardVisible = newValue
+                    }
                     .font(.buydeeBody)
                     .foregroundColor(Color.buydee.primaryText)
                     .padding(16)
