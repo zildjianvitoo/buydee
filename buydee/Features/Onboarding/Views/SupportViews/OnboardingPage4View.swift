@@ -10,7 +10,8 @@ struct OnboardingPage4View: View {
     
     @State private var isKeyboardVisible: Bool = false
     
-    // MARK: - Body    var body: some View {
+    // MARK: - Body
+    var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
                 Color.buydee.cardBackground.ignoresSafeArea()
@@ -48,7 +49,7 @@ struct OnboardingPage4View: View {
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.top, 30)
                                 .padding(.horizontal, 32)
-                                .padding(.bottom, 24)
+                                .padding(.bottom, 16)
                             
                             ScrollView {
                                 VStack(spacing: 12) {
@@ -65,6 +66,7 @@ struct OnboardingPage4View: View {
                                 }
                                 .padding(.horizontal, 32)
                                 .padding(.bottom, 20)
+                                .padding(.top,8)
                             }
                             .scrollDisabled(true)
                             .scrollIndicators(.hidden)

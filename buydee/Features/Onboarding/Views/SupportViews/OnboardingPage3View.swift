@@ -44,7 +44,7 @@ struct OnboardingPage3View: View {
                     .background(Color.buydee.primaryButton)
                     .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, 48)
         }
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
