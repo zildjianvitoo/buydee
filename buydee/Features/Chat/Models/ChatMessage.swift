@@ -5,17 +5,20 @@ struct ChatMessage: Identifiable, Equatable, Sendable {
     let role: ChatRole
     let content: String
     let imageData: Data?
+    let decisionMetadata: DecisionMetadata?
 
     init(
         id: UUID = UUID(),
         role: ChatRole,
         content: String,
-        imageData: Data? = nil
+        imageData: Data? = nil,
+        decisionMetadata: DecisionMetadata? = nil
     ) {
         self.id = id
         self.role = role
         self.content = content
         self.imageData = imageData
+        self.decisionMetadata = decisionMetadata
     }
 
     var containsDecisionSummary: Bool {
@@ -28,6 +31,6 @@ struct ChatMessage: Identifiable, Equatable, Sendable {
 
     var decisionSummary: DecisionSummary? {
         guard role == .assistant, containsDecisionSummary else { return nil }
-        return DecisionSummary(markdown: content)
+        return DecisionSummary(markdown: content, metadata: decisionMetadata)
     }
 }

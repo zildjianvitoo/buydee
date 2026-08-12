@@ -19,7 +19,8 @@ struct OpenRouterChatService: ChatServicing {
         to latestMessage: ChatMessage,
         history: [ChatMessage],
         goals: String,
-        userKnowledge: String
+        userKnowledge: String,
+        decisionHistory: [PurchaseDecisionMemory]
     ) async throws -> ChatServiceResponse {
         try Task.checkCancellation()
 
@@ -29,7 +30,8 @@ struct OpenRouterChatService: ChatServicing {
                 content: .text(
                     DeveloperPrompt.render(
                         goals: goals,
-                        userKnowledge: userKnowledge
+                        userKnowledge: userKnowledge,
+                        decisionHistory: decisionHistory
                     )
                 )
             )
@@ -43,6 +45,10 @@ struct OpenRouterChatService: ChatServicing {
             model: configuration.model,
             messages: requestMessages,
             maximumTokens: configuration.maximumOutputTokens,
+            reasoning: Request.Reasoning(
+                effort: configuration.reasoningEffort,
+                exclude: configuration.excludesReasoningFromResponse
+            ),
             stream: false
         )
 
@@ -117,13 +123,20 @@ private extension OpenRouterChatService {
         let model: String
         let messages: [Message]
         let maximumTokens: Int
+        let reasoning: Reasoning
         let stream: Bool
 
         enum CodingKeys: String, CodingKey {
             case model
             case messages
             case maximumTokens = "max_tokens"
+            case reasoning
             case stream
+        }
+
+        struct Reasoning: Encodable {
+            let effort: ReasoningEffort
+            let exclude: Bool
         }
 
         struct Message: Encodable {

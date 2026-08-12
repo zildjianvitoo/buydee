@@ -19,9 +19,10 @@ Target chatbot MVP:
 - Summary dengan strict BUY/BYE marker;
 - completion screen BUY dan BYE;
 - runtime-only transcript, cancellation, dan duplicate-send protection.
-- cumulative user knowledge yang ringkas melalui satu record SwiftData.
+- cumulative user knowledge yang ringkas melalui satu record SwiftData;
+- daftar maksimum 30 keputusan selesai (barang, harga, BUY/BYE, dan ringkasan trade-off) di SwiftData.
 
-SwiftData transcript/chat history, OCR, Screenshot Shortcut, Share Extension, product-link analysis, widgets, dan reminders bukan scope chatbot MVP. URL-only tidak dikirim ke model. SwiftData hanya menyimpan satu context ringkas lintas chat, bukan pesan atau gambar.
+SwiftData transcript/chat history, OCR, Screenshot Shortcut, Share Extension, product-link analysis, widgets, dan reminders bukan scope chatbot MVP. URL-only tidak dikirim ke model. SwiftData menyimpan context global ringkas dan record keputusan selesai, bukan pesan, gambar, atau transcript lengkap.
 
 ## Arsitektur dan teknologi
 
@@ -33,8 +34,9 @@ SwiftData transcript/chat history, OCR, Screenshot Shortcut, Share Extension, pr
 - Developer prompt dikirim dengan role `developer`.
 - Maksimal 12 transcript messages sebagai history.
 - Non-streaming response, maksimum 2.048 output token, timeout 90 detik.
+- Reasoning memakai effort `medium`; model tetap melakukan reasoning tetapi detailnya tidak dikembalikan (`exclude: true`).
 - `UserDefaults` untuk onboarding, goals, dan camera guide state.
-- SwiftData untuk satu cumulative user-knowledge record maksimal 600 karakter.
+- SwiftData untuk satu cumulative user-knowledge record maksimal 600 karakter dan maksimum 30 record keputusan selesai.
 - Keychain untuk OpenRouter credential.
 - AVFoundation/PhotosUI dari Camera feature existing.
 - Image pipeline chatbot: longest side 2048 px, JPEG quality 0.82, lalu data URL base64.
@@ -111,7 +113,7 @@ Pada run pertama, aplikasi membaca environment key dan menyimpannya ke Keychain.
 
 - Jangan menaruh key di Swift source, `Info.plist`, `.xcconfig` yang di-commit, asset, fixture, README value, atau log.
 - Jangan commit user scheme/Xcode user data yang mengandung secret.
-- Jangan log transcript, image data, atau `UserChatKnowledge`.
+- Jangan log transcript, image data, `UserChatKnowledge`, atau `PurchaseDecisionRecord`.
 - Gunakan API key development pribadi dan rotasi key jika pernah terekspos.
 - Keychain melindungi local storage, tetapi bukan pengganti backend protection untuk aplikasi production.
 - Production harus menggunakan backend proxy/rate limiting sebelum distribusi luas.
@@ -124,8 +126,9 @@ Pada run pertama, aplikasi membaca environment key dan menyimpannya ke Keychain.
 - Summary wajib mengandung `**PROS:**`, `**CONS:**`, `**BUY**`, dan `**BYE**` sebelum tombol decision tampil.
 - Tap decision mengirim `BUY — Beli sekarang` atau `BYE — Tidak beli sekarang` sebagai user message.
 - Satu request AI saja boleh aktif; back/new chat membatalkan request dan late response diabaikan.
-- Transcript hanya runtime; `userGoals` persisten di `UserDefaults`, sedangkan context penting lintas chat disimpan sebagai satu record SwiftData.
-- Marker knowledge internal dihapus sebelum bubble dirender dan tidak membutuhkan request AI kedua.
+- Transcript hanya runtime; `userGoals` persisten di `UserDefaults`, context penting lintas chat disimpan sebagai satu record SwiftData, dan keputusan selesai disimpan sebagai daftar terpisah.
+- Marker knowledge dan decision metadata internal dihapus sebelum bubble dirender dan tidak membutuhkan request AI kedua.
+- Decision record hanya dibuat setelah Summary valid dan user tap BUY/BYE; maksimum 12 record terbaru menjadi knowledge tambahan pada chat berikutnya.
 - Image menggunakan model vision yang sama setelah resize 2048/JPEG 0.82; tidak ada OCR atau image-analysis service kedua.
 - URL HTTP/HTTPS tanpa gambar ditolak sebelum send.
 

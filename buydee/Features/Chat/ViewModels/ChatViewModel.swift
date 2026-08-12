@@ -14,7 +14,10 @@ final class ChatViewModel {
     @ObservationIgnored private let imageProcessor: ImageAttachmentProcessor
     @ObservationIgnored private let userDefaults: UserDefaults
     @ObservationIgnored private var userKnowledgeStore: (any UserKnowledgeStoring)?
+    @ObservationIgnored private var decisionHistoryStore: (any DecisionHistoryStoring)?
     @ObservationIgnored private var userKnowledge = ""
+    @ObservationIgnored private var decisionHistory: [PurchaseDecisionMemory] = []
+    @ObservationIgnored private var sessionID = UUID()
     @ObservationIgnored private var responseTask: Task<Void, Never>?
     @ObservationIgnored private var imageProcessingTask: Task<Void, Never>?
     @ObservationIgnored private var activeRequestID: UUID?
@@ -43,6 +46,16 @@ final class ChatViewModel {
             userKnowledge = try store.currentKnowledge()
         } catch {
             errorMessage = Self.knowledgeLoadErrorMessage
+        }
+    }
+
+    func configureDecisionHistoryStore(_ store: any DecisionHistoryStoring) {
+        decisionHistoryStore = store
+
+        do {
+            decisionHistory = try store.recentDecisions(limit: Self.promptDecisionHistoryLimit)
+        } catch {
+            errorMessage = Self.decisionHistoryLoadErrorMessage
         }
     }
 
@@ -109,7 +122,7 @@ final class ChatViewModel {
     func chooseDecision(_ decision: PurchaseDecision) -> Bool {
         guard !isGenerating,
               messages.last?.role == .assistant,
-              messages.last?.decisionSummary != nil else {
+              let summary = messages.last?.decisionSummary else {
             return false
         }
 
@@ -117,6 +130,7 @@ final class ChatViewModel {
         let history = messages
         messages.append(latestMessage)
         beginResponse(to: latestMessage, history: history)
+        persistDecision(summary, decision: decision)
         return true
     }
 
@@ -175,6 +189,7 @@ final class ChatViewModel {
         errorMessage = nil
         lastRequestedMessage = nil
         lastRequestHistory = []
+        sessionID = UUID()
     }
 
     nonisolated static func containsHTTPURL(in text: String) -> Bool {
@@ -234,13 +249,18 @@ final class ChatViewModel {
                     to: latestMessage,
                     history: history,
                     goals: goals,
-                    userKnowledge: self.userKnowledge
+                    userKnowledge: self.userKnowledge,
+                    decisionHistory: self.decisionHistory
                 )
                 try Task.checkCancellation()
                 guard self.activeRequestID == requestID else { return }
 
                 self.messages.append(
-                    ChatMessage(role: .assistant, content: response.content)
+                    ChatMessage(
+                        role: .assistant,
+                        content: response.content,
+                        decisionMetadata: response.decisionMetadata
+                    )
                 )
                 self.persistUserKnowledge(response.updatedUserKnowledge)
                 self.lastRequestedMessage = nil
@@ -272,6 +292,101 @@ final class ChatViewModel {
         }
     }
 
+    private func persistDecision(
+        _ summary: DecisionSummary,
+        decision: PurchaseDecision
+    ) {
+        let metadata = summary.metadata
+        let consideredPrice = summary.consideredPriceInRupiah
+        let rangeBounds = consideredPrice?.isEstimated == true
+            ? Self.validatedRangeBounds(
+                lower: metadata?.priceRangeLower,
+                upper: metadata?.priceRangeUpper
+            )
+            : nil
+        let memory = PurchaseDecisionMemory(
+            id: UUID(),
+            sessionID: sessionID,
+            productName: Self.normalized(
+                metadata?.productName,
+                fallback: Self.unknownProductName,
+                maximumLength: 100
+            ),
+            productCategory: Self.normalizedOptional(
+                metadata?.productCategory,
+                maximumLength: 80
+            ),
+            priceInRupiah: consideredPrice?.value,
+            originalPriceText: Self.normalizedOptional(
+                metadata?.originalPriceText,
+                maximumLength: 100
+            ),
+            priceIsEstimated: consideredPrice?.isEstimated ?? false,
+            priceRangeLower: rangeBounds?.lower,
+            priceRangeUpper: rangeBounds?.upper,
+            decision: decision,
+            decidedAt: .now,
+            contextSummary: Self.normalized(
+                metadata?.contextSummary,
+                fallback: summary.context,
+                maximumLength: 240
+            ),
+            prosSummary: Self.normalized(
+                metadata?.prosSummary,
+                fallback: summary.pros.joined(separator: "; "),
+                maximumLength: 200
+            ),
+            consSummary: Self.normalized(
+                metadata?.consSummary,
+                fallback: summary.cons.joined(separator: "; "),
+                maximumLength: 200
+            ),
+            relatedGoal: Self.normalizedOptional(
+                metadata?.relatedGoal,
+                maximumLength: 120
+            )
+        )
+
+        do {
+            try decisionHistoryStore?.save(memory)
+            decisionHistory.removeAll { $0.sessionID == memory.sessionID }
+            decisionHistory.insert(memory, at: 0)
+            decisionHistory = Array(decisionHistory.prefix(Self.promptDecisionHistoryLimit))
+        } catch {
+            errorMessage = Self.decisionHistorySaveErrorMessage
+        }
+    }
+
+    private static func normalized(
+        _ value: String?,
+        fallback: String,
+        maximumLength: Int
+    ) -> String {
+        normalizedOptional(value, maximumLength: maximumLength)
+            ?? normalizedOptional(fallback, maximumLength: maximumLength)
+            ?? ""
+    }
+
+    private static func normalizedOptional(
+        _ value: String?,
+        maximumLength: Int
+    ) -> String? {
+        guard let value else { return nil }
+        let normalizedValue = value
+            .split(whereSeparator: \Character.isWhitespace)
+            .joined(separator: " ")
+        guard !normalizedValue.isEmpty else { return nil }
+        return String(normalizedValue.prefix(maximumLength))
+    }
+
+    private static func validatedRangeBounds(
+        lower: Int?,
+        upper: Int?
+    ) -> (lower: Int, upper: Int)? {
+        guard let lower, let upper, lower > 0, upper >= lower else { return nil }
+        return (lower, upper)
+    }
+
     private static let unsupportedLinkMessage =
         "Link produk belum bisa dianalisis. Kirim nama produk dan harganya, atau lampirkan gambar produk."
 
@@ -280,6 +395,15 @@ final class ChatViewModel {
 
     private static let knowledgeSaveErrorMessage =
         "Respons sudah diterima, tetapi konteks pentingnya belum berhasil disimpan."
+
+    private static let decisionHistoryLoadErrorMessage =
+        "Riwayat keputusan sebelumnya belum berhasil dimuat. Chat ini tetap bisa dilanjutkan."
+
+    private static let decisionHistorySaveErrorMessage =
+        "Pilihanmu tetap diproses, tetapi detail keputusan ini belum berhasil disimpan."
+
+    private static let unknownProductName = "Produk dari sesi ini"
+    private static let promptDecisionHistoryLimit = 12
 
     private static let earlySummaryRequest =
         "Aku siap menentukan pilihan sekarang. Jika harga berupa rentang dan nilai tengahnya belum aku konfirmasi, tanyakan konfirmasinya dulu dan jangan buat Summary. Jika harga sudah valid, rangkum percakapan ini sesuai format Summary dan tawarkan BUY atau BYE secara netral."
