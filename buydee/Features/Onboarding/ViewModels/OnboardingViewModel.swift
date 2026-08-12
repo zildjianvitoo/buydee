@@ -8,7 +8,7 @@ import UserNotifications
 @MainActor
 final class OnboardingViewModel {
     var currentPage: Int = 0
-    let totalPages: Int = 4
+    let totalPages: Int = 5
     var selectedGoal: OnboardingGoal? = nil
     var customGoalText: String = ""
     func nextPage() {
