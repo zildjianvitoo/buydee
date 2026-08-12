@@ -18,14 +18,14 @@ struct OnboardingPage3View: View {
             Spacer()
             ZStack {
                 HStack(spacing: 20) {
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: BuydeeRadius.medium)
                         .fill(Color.gray.opacity(0.3))
                         .frame(width: 140, height: 160)
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: BuydeeRadius.medium)
                         .fill(Color.gray.opacity(0.3))
                         .frame(width: 140, height: 160)
                 }
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: BuydeeRadius.medium)
                     .fill(Color.gray.opacity(0.45))
                     .frame(width: 160, height: 180)
                     .offset(y: 40)
@@ -39,7 +39,7 @@ struct OnboardingPage3View: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(Color.buydee.primaryButton)
-                    .clipShape(Capsule())
+                    .cornerRadius(BuydeeRadius.small)
             }
             .padding(.bottom, 20)
         }

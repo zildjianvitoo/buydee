@@ -212,16 +212,16 @@ struct CameraCaptureView: View {
             .foregroundStyle(.white)
             .frame(width: 68, height: 24)
             .background {
-                RoundedRectangle(cornerRadius: 21, style: .continuous)
+                RoundedRectangle(cornerRadius: BuydeeRadius.medium, style: .continuous)
                     .fill(.ultraThinMaterial)
                     .opacity(0.28)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 21, style: .continuous)
+                        RoundedRectangle(cornerRadius: BuydeeRadius.medium, style: .continuous)
                             .fill(cameraTipTint.opacity(0.70))
                     }
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 21, style: .continuous)
+                RoundedRectangle(cornerRadius: BuydeeRadius.medium, style: .continuous)
                     .stroke(.white.opacity(0.58), lineWidth: 1)
             }
             .shadow(color: cameraTipTint.opacity(0.12), radius: 5, y: 1)
@@ -236,10 +236,10 @@ struct CameraCaptureView: View {
                 .frame(width: 260, height: 37)
                 .background(
                     Color.black.opacity(0.58),
-                    in: RoundedRectangle(cornerRadius: 14, style: .circular)
+                    in: RoundedRectangle(cornerRadius: BuydeeRadius.small, style: .circular)
                 )
                 .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .circular)
+                    RoundedRectangle(cornerRadius: BuydeeRadius.small, style: .circular)
                         .stroke(.white.opacity(0.55), lineWidth: 1)
                 }
         }

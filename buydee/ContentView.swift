@@ -18,7 +18,7 @@ struct ContentView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 180, height: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.medium, style: .continuous))
                         .accessibilityLabel("Last captured item")
                 } else {
                     Image(systemName: "camera.viewfinder")

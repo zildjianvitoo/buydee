@@ -79,7 +79,7 @@ struct OnboardingPage4View: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
                                     .background(isDisabled ? Color.gray.opacity(0.6) : Color.buydee.primaryButton)
-                                    .clipShape(Capsule())
+                                    .cornerRadius(BuydeeRadius.small)
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, 32)
@@ -122,7 +122,7 @@ struct GoalSelectionRow: View {
                 .padding(.vertical, 16)
                 .padding(.horizontal, 20)
                 .background(Color.buydee.cardBackground)
-                .cornerRadius(16, corners: isSelected ? [.topLeft, .topRight] : .allCorners)
+                .cornerRadius(BuydeeRadius.small, corners: isSelected ? [.topLeft, .topRight] : .allCorners)
             }
             .buttonStyle(.plain)
             if isSelected {
@@ -139,11 +139,11 @@ struct GoalSelectionRow: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
                     .background(Color.buydee.cardBackground)
-                    .cornerRadius(16, corners: [.bottomLeft, .bottomRight])
+                    .cornerRadius(BuydeeRadius.small, corners: [.bottomLeft, .bottomRight])
             }
         }
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: BuydeeRadius.small)
                 .stroke(isSelected ? Color.buydee.primaryButton : Color.clear, lineWidth: 2)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)

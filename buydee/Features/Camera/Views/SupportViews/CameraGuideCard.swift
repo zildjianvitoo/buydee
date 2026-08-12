@@ -32,14 +32,14 @@ struct CameraGuideCard: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.roundedRectangle(radius: 17))
+            .buttonBorderShape(.roundedRectangle(radius: BuydeeRadius.small))
             .controlSize(.large)
             .tint(Color.buydee.primaryButton)
             .accessibilityHint("Dismisses the camera guide")
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 24)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: BuydeeRadius.medium, style: .continuous))
         .frame(maxWidth: 320)
         .environment(\.colorScheme, .light)
         .accessibilityElement(children: .contain)
