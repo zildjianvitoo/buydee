@@ -13,17 +13,13 @@ struct OnboardingPage1View: View {
 
     // MARK: - Body
     var body: some View {
-        ZStack{
-            Image("BG-onboarding-1")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-            
-            VStack {
-                Text("Hi, There!\nI’ll be your personal shopping buddy.")
-                    .font(Font.buydeeLargeTitle)
+        VStack {
+                Text("Hi, there!\nI’ll be your personal shopping buddy.")
+                    .font(.buydeeLargeTitle)
                     .foregroundStyle(Color.buydee.primaryText)
-                    .padding(.top, 100)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 40)
                 Spacer()
                 
                 ZStack {
@@ -36,19 +32,21 @@ struct OnboardingPage1View: View {
                     Text("Bring me along")
                         .font(.buydeeHeadline)
                         .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
                         .background(Color.buydee.primaryButton)
-                        .clipShape(
-                            RoundedRectangle(cornerRadius: BuydeeRadius.small)
-                        )
+                        .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
                 }
-                .padding(.horizontal, 50)
-                .padding(.bottom, 150)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 48)
 
-            }
         }
-        
-        
+        .background(
+            Image("BG-onboarding-1")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
     }
 }
 

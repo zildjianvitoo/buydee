@@ -40,7 +40,7 @@ struct HomeView: View {
                     y: geometry.size.height * 0.20
                 )
 
-                Image("OtterImg")
+                Image("otter")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 120, height: 180)

@@ -13,25 +13,19 @@ struct OnboardingPage2View: View {
 
     // MARK: - Body
     var body: some View {
-        ZStack {
-            Image("BG-onboarding-2")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-            
-            VStack {
-                VStack {
+        VStack {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Let's take another look before you buy!")
-                        .font(Font.buydeeLargeTitle)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.buydeeLargeTitle)
                         .foregroundStyle(Color.buydee.primaryText)
 
                     Text("I’ll be here whenever you’re thinking about buying something!")
-                        .font(Font.buydeeTitle3)
-                        .padding(.top, 2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.buydeeBody)
                         .foregroundStyle(Color.buydee.primaryText)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 32)
+                .padding(.top, 40)
                 .padding(.bottom, 30)
 
                 ZStack {
@@ -56,22 +50,25 @@ struct OnboardingPage2View: View {
                         .offset(y: 10)
                 }
                 
-                VStack {
-                    Button(action: action) {
-                        Text("Show Me")
-                            .font(.buydeeHeadline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                            .background(Color.buydee.primaryButton)
-                            .clipShape(
-                                RoundedRectangle(cornerRadius: BuydeeRadius.small)
-                            )
-                    }
+                Spacer()
+                Button(action: action) {
+                    Text("Show Me")
+                        .font(.buydeeHeadline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.buydee.primaryButton)
+                        .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
                 }
-                .padding(.bottom, 50)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 48)
             }
-            .padding(.horizontal, 30)
-        }
+        .background(
+            Image("BG-onboarding-2")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
     }
 
     // MARK: - Private Methods

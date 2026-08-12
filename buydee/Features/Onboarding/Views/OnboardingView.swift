@@ -8,13 +8,13 @@ struct OnboardingView: View {
     var body: some View {
         TabView(selection: $viewModel.currentPage) {
             
-            // Placeholder for Page 1
+            
             OnboardingPage1View(action: {
                 viewModel.nextPage()
             })
             .tag(0)
             
-            // Placeholder for Page 2
+           
             OnboardingPage2View(action: {
                 viewModel.nextPage()
             })

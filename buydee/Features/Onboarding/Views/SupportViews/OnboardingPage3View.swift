@@ -15,10 +15,15 @@ struct OnboardingPage3View: View {
                 .font(.buydeeLargeTitle)
                 .foregroundStyle(Color.buydee.primaryText)
                 .padding(.top, 40)
+                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(nil)
+            
             Text("However you find it, bring it here and we'll think it through with what matters to you in mind.")
                 .font(.buydeeBody)
                 .foregroundStyle(Color.buydee.primaryText)
                 .padding(.trailing, 20)
+                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(nil)
             Spacer()
             
             VStack(spacing: 32) {

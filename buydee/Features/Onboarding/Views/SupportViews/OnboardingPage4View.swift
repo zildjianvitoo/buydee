@@ -19,7 +19,7 @@ struct OnboardingPage4View: View {
                 Text("Before we go,")
                     .font(.buydeeLargeTitle)
                     .foregroundStyle(Color.buydee.primaryText)
-                    .padding(.top, 40)
+                    .padding(.top, 20)
                     .padding(.horizontal, 32)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -35,12 +35,6 @@ struct OnboardingPage4View: View {
                     Spacer(minLength: 0)
                     
                     ZStack(alignment: .top) {
-                        
-                        Color.buydee.background
-                            .clipShape(CurveTopShape())
-                            .ignoresSafeArea(edges: .bottom)
-                        
-                       
                         VStack(spacing: 0) {
                             Text("What would you like to\nkeep it in mind before you buy?")
                                 .font(.buydeeTitle2)
@@ -87,14 +81,18 @@ struct OnboardingPage4View: View {
                                     .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
                             }
                             .buttonStyle(.plain)
-                            .padding(.horizontal, 32)
-                            .padding(.bottom, 54) // Menyamakan posisi dengan page 3 (safe area bottom ~34 + 20)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 48)
                             .disabled(isDisabled)
                         }
                     }
-                    .frame(height: geometry.size.height * 0.75) // 3/4 Screen
+                    .background(
+                        Color.buydee.background
+                            .clipShape(CurveTopShape())
+                            .ignoresSafeArea(edges: .bottom)
+                    )
+                    .frame(height: geometry.size.height * 0.70)
                 }
-                .ignoresSafeArea(edges: .bottom)
             }
             .offset(y: isKeyboardVisible ? -180 : 0)
             .animation(.easeOut(duration: 0.25), value: isKeyboardVisible)
