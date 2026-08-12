@@ -11,7 +11,7 @@ struct BuydeeApp: App {
     var body: some Scene {
         WindowGroup {
             if hasCompletedOnboarding {
-                HomeView()
+                ContentView()
             } else {
                 OnboardingView()
             }

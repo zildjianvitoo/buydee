@@ -1,71 +1,134 @@
-# Buydee 🛑🤔
+# Buydee
 
-> **Impulsive Buying Intervention App** — Pause and think before you buy.
+Buydee adalah aplikasi SwiftUI untuk membantu pengguna berhenti sejenak sebelum memutuskan pembelian. Chatbot bersifat reflektif dan netral: keputusan akhir tetap `BUY` atau `BYE` dari pengguna.
 
-Buydee is an iOS app designed for Apple Developer Academy Challenge 4. It acts as an "impulse brake" for Gen Z shoppers (21–28 years old) who struggle with impulsive buying both online and offline. By utilizing conversational AI (Google Gemini) with a psychological framework, Buydee guides users through a reflective pause, helping them make more rational purchasing decisions without feeling judged.
+## Status project
 
----
+Baseline yang sudah tersedia:
 
-## ✨ Key Features
+- onboarding dan goals lokal;
+- Home screen dengan savings summary, goal editor, mascot, dan CTA `Check It Together`;
+- design system `AppColor.swift` dan `AppFont.swift`;
+- camera/Photos flow melalui `CameraCaptureView`, `CameraCaptureViewModel`, dan `CameraService`.
 
-- 💬 **AI Reflective Chat**: Conversational AI that asks psychological framework-based questions to help you rethink your purchase.
-- 📸 **Camera & Image Analysis**: See something you like in a physical store? Snap a photo, and the AI will analyze the item and start a reflection session.
-- 📱 **Screenshot Shortcut (OCR)**: Screenshot an item on Shopee or TikTok Shop, and Buydee will automatically extract the name and price to start a session.
-- 🔗 **Share Extension**: Share a product link directly to Buydee to evaluate it seamlessly.
-- 🧩 **Widgets**: Lock Screen and Home Screen widgets for passive awareness and quick access.
-- 🔔 **Smart Reminders**: 5-minute incomplete session reminders and weekly recap notifications.
+Target chatbot MVP:
 
----
+- camera-first entry dari Home menuju ChatView dengan image draft;
+- reflective chat teks dan gambar melalui OpenRouter;
+- integrasi camera/Photos existing ke draft chatbot;
+- Summary dengan strict BUY/BYE marker;
+- completion screen BUY dan BYE;
+- runtime-only transcript, cancellation, dan duplicate-send protection.
 
-## 🛠 Tech Stack
+SwiftData chat history, OCR, Screenshot Shortcut, Share Extension, product-link analysis, widgets, dan reminders bukan scope chatbot MVP. URL-only tidak dikirim ke model.
 
-- **Frontend**: SwiftUI (iOS 17+)
-- **Architecture**: Feature-based MVVM with Core Layer
-- **Database**: SwiftData (Local persistence)
-- **AI Backend**: Google Gemini 3.6 Flash via REST / SDK
-- **On-device ML**: Apple Vision framework (for OCR)
-- **Frameworks**: WidgetKit, UserNotifications, AppIntents (Shortcuts)
+## Arsitektur dan teknologi
 
----
+- SwiftUI, feature-based MVVM, dan shared `Core` layer.
+- UI memakai `Color.buydee` serta semantic fonts dari `AppFont.swift`.
+- OpenRouter Chat Completions via REST.
+- Endpoint: `https://openrouter.ai/api/v1/chat/completions`.
+- Default model: `openai/gpt-5.6-luna`.
+- Developer prompt dikirim dengan role `developer`.
+- Maksimal 12 transcript messages sebagai history.
+- Non-streaming response, maksimum 2.048 output token, timeout 90 detik.
+- `UserDefaults` untuk onboarding, goals, dan camera guide state.
+- Keychain untuk OpenRouter credential.
+- AVFoundation/PhotosUI dari Camera feature existing.
+- Image pipeline chatbot: longest side 2048 px, JPEG quality 0.82, lalu data URL base64.
 
-## 🚀 Getting Started
+Lihat [PRD_BUYDEE.md](PRD_BUYDEE.md) untuk kontrak request, prompt state machine, image integration, UI, security, dan acceptance criteria.
 
-### Prerequisites
-- Xcode 15.0 or later
-- iOS 17.0 or later (iPhone only)
-- Active Google Gemini API Key
+## Developer setup
 
-### Installation & Setup
+### 1. Prerequisites
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/zildjianvitoo/buydee.git
-   cd buydee
-   ```
+- macOS dan Xcode yang mendukung deployment target pada `buydee.xcodeproj`.
+- iPhone device untuk pengujian kamera; Simulator dapat dipakai untuk UI dan Photos flow.
+- OpenRouter account dan API key development.
 
-2. **Setup Gemini API Key**
-   - Get your API key from [Google AI Studio](https://aistudio.google.com/).
-   - *(Note for team: Add instructions here on where to place the API key in the code or environment variables once the project is set up).*
+### 2. Clone dan buka project
 
-3. **Open the project**
-   - Open `buydee.xcodeproj` in Xcode.
-   - Wait for Swift Package Manager to resolve dependencies.
+```bash
+git clone https://github.com/zildjianvitoo/buydee.git
+cd buydee
+open buydee.xcodeproj
+```
 
-4. **Build and Run**
-   - Select an iOS 17+ Simulator or your physical iPhone.
-   - Hit `Cmd + R` to run the app.
+Tunggu Xcode selesai mengindeks project, lalu pilih scheme `buydee`.
 
----
+### 3. Tambahkan OpenRouter API key ke Run scheme
 
-## 📚 Documentation
+1. Buka **Product → Scheme → Edit Scheme…**.
+2. Pilih **Run** pada sidebar.
+3. Buka tab **Arguments**.
+4. Pada **Environment Variables**, tekan `+`.
+5. Isi Name dengan `OPENROUTER_API_KEY`.
+6. Isi Value dengan API key development lokal.
+7. Centang variable agar aktif, lalu tutup scheme editor.
 
-For more detailed information on how the app is built and how to contribute, please refer to the following documents:
+Gunakan placeholder saat menulis dokumentasi atau membagikan screenshot:
 
-- 📄 [**Product Requirements Document (PRD)**](PRD_BUYDEE.md) — Detailed feature scope, UX flows, data models, and API specs.
-- 🤝 [**Contributing Guide**](CONTRIBUTING.md) — Git branching strategy (Git Flow), Conventional Commits, PR guidelines, and architecture rules.
+```text
+OPENROUTER_API_KEY=<your-local-openrouter-key>
+```
 
----
+Pada run pertama, aplikasi membaca environment key dan menyimpannya ke Keychain. Run berikutnya dapat memakai key di Keychain jika environment variable tidak tersedia.
 
-## 👥 Team
+### 4. Pilih runtime
 
-Built for **Apple Developer Academy Challenge 4**.
+- Gunakan physical iPhone untuk capture camera lengkap, flash, dan permission testing.
+- Gunakan Simulator untuk chat UI, network flow, dan memilih fixture/image dari Photos bila tersedia.
+- Pastikan network aktif karena AI tidak memiliki offline fallback.
+
+### 5. Build dan run
+
+1. Pilih device/simulator target.
+2. Jalankan **Product → Build** atau `Cmd + B`.
+3. Jalankan aplikasi dengan `Cmd + R`.
+4. Selesaikan onboarding agar `userGoals` tersimpan.
+5. Dari Home, tap **Check It Together**, ambil atau pilih foto, lalu tap **Use Photo** untuk membuka ChatView dengan image draft terlampir.
+
+### 6. Verifikasi credential dan request
+
+- Jika key tidak tersedia, aplikasi harus menampilkan error konfigurasi dan tidak mengirim request.
+- Pastikan request menuju endpoint OpenRouter, bukan endpoint Gemini.
+- Jangan mencetak API key, authorization header, request body, goals, transcript, atau base64 image ke console.
+- Saat mengganti key, aktifkan environment variable baru pada Run scheme agar Keychain diperbarui saat bootstrap.
+
+### 7. Verifikasi camera integration
+
+1. Dari Home, tap **Check It Together**.
+2. Capture foto atau pilih foto melalui Photos action pada camera screen existing.
+3. Pada preview, verifikasi **Retake/Take Photo**, **Select Another**, dan **Use Photo**.
+4. Tap **Use Photo** dan pastikan ChatView terbuka dengan image draft terlampir, bukan langsung mengirim request.
+5. Verifikasi remove, cancel, permission denied, image-only send, serta caption send.
+6. Setelah send, pastikan image dan caption dirender sebagai dua bubble terpisah walaupun tetap dikirim sebagai satu multimodal message ke AI.
+
+## Security rules
+
+- Jangan menaruh key di Swift source, `Info.plist`, `.xcconfig` yang di-commit, asset, fixture, README value, atau log.
+- Jangan commit user scheme/Xcode user data yang mengandung secret.
+- Gunakan API key development pribadi dan rotasi key jika pernah terekspos.
+- Keychain melindungi local storage, tetapi bukan pengganti backend protection untuk aplikasi production.
+- Production harus menggunakan backend proxy/rate limiting sebelum distribusi luas.
+
+## Chatbot contract ringkas
+
+- Developer prompt penuh menentukan fase; aplikasi tidak menyimpan enum fase.
+- Nama produk dan harga harus diketahui sebelum eksplorasi DARN.
+- Summary wajib mengandung `**PROS:**`, `**CONS:**`, `**BUY**`, dan `**BYE**` sebelum tombol decision tampil.
+- Tap decision mengirim `BUY — Beli sekarang` atau `BYE — Tidak beli sekarang` sebagai user message.
+- Satu request AI saja boleh aktif; back/new chat membatalkan request dan late response diabaikan.
+- Transcript hanya runtime; `userGoals` persisten di `UserDefaults`.
+- Image menggunakan model vision yang sama setelah resize 2048/JPEG 0.82; tidak ada OCR atau image-analysis service kedua.
+- URL HTTP/HTTPS tanpa gambar ditolak sebelum send.
+
+## Dokumentasi
+
+- [Technical PRD](PRD_BUYDEE.md)
+- [Contributing guide](CONTRIBUTING.md)
+
+## Team
+
+Built for Apple Developer Academy Challenge 4.

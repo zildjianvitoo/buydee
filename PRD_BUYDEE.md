@@ -1,523 +1,474 @@
-# Buydee — Impulsive Buying Intervention App
+# Buydee — Technical Product Requirements
 
-## 1. Overview
+> Status: target arsitektur chatbot MVP per 12 Agustus 2026. Dokumen ini memprioritaskan technical logic. Untuk perilaku percakapan, developer prompt penuh adalah source of truth.
 
-**Feature / Project Name:** Buydee
+## 1. Tujuan teknis
 
-**Problem Statement:**
-Gen Z (21–28 tahun) sering melakukan impulsive buying baik online maupun offline, yang menyebabkan penyesalan finansial dan pengeluaran yang tidak terkontrol. Mereka butuh sebuah "pause moment" — sebuah intervensi yang membantu mereka berpikir ulang sebelum membeli, tapi tanpa terasa menggurui atau membosankan. Saat ini tidak ada tool yang seamless masuk ke dalam shopping flow mereka (browse → screenshot → share link → beli).
+Buydee adalah aplikasi SwiftUI yang memberi ruang refleksi sebelum pengguna memutuskan pembelian. Chatbot membantu pengguna menyusun alasan dan trade-off, tetapi tidak memberikan verdict.
 
-**Proposed Solution:**
-Sebuah iOS app bernama Buydee yang bertindak sebagai "impulse brake" — menggunakan AI conversational (Gemini) untuk mengajukan pertanyaan reflektif berbasis framework psikologi, lalu memberikan actionable plan yang sesuai. App ini terintegrasi langsung ke shopping flow user melalui screenshot shortcut, kamera, dan share extension agar friction untuk "pause and think" seminimal mungkin.
+Kontrak keputusan chatbot hanya memiliki dua nilai:
 
-**AI Build Summary:**
+- `BUY` — beli sekarang.
+- `BYE` — tidak beli sekarang.
 
-> Build a native SwiftUI iOS app (iOS 17+) that helps users pause before impulsive purchases. Core features: (1) AI chat powered by Google Gemini API with a custom rethinking prompt framework that asks reflective questions and recommends action plans, (2) camera capture to photograph physical items for AI analysis, (3) Shortcuts integration for screenshot → OCR text extraction (item name + price) → auto-populate chat, (4) Share Extension to receive e-commerce links/images and route them to the AI chat. Local-only data with SwiftData. No auth required. 3–4 week timeline.
+Model tidak boleh menganggap BUY, BYE, atau menunggu sebagai pilihan yang otomatis lebih baik. Kontrak Buy/Wait/Skip dan action plan preskriptif pada PRD lama tidak berlaku untuk chatbot MVP.
 
----
+## 2. Source of truth dan baseline project
 
-## 2. Goals & Success Metrics
+Jika dokumentasi berbeda, gunakan urutan acuan berikut:
 
-**Primary Goal:** Membantu user melakukan "pause" sebelum impulsive purchase dengan memberikan reflective conversation yang actionable.
+1. Source code aktif: konfigurasi AI, developer prompt, models, service protocol, camera flow, dan design system.
+2. Dokumen ini untuk batas arsitektur, integrasi, dan acceptance criteria.
+3. `README.md` untuk setup developer lokal.
+4. Ide lama hanya berlaku jika disebut eksplisit sebagai roadmap.
 
-**Success Metrics:**
+Baseline yang sudah tersedia:
 
-- ≥ 60% user yang memulai conversation dengan AI menyelesaikan seluruh pertanyaan reflektif
-- ≥ 40% user melaporkan (via in-app feedback) bahwa mereka membatalkan atau menunda pembelian setelah menggunakan Buydee
-- Average session duration ≥ 2 menit (menunjukkan engagement dengan reflective process)
+- App shell dengan onboarding dan Home (`ContentView`).
+- Design system melalui `Color.buydee`/`BuydeeColors` di `AppColor.swift` dan semantic fonts di `AppFont.swift`.
+- Camera dan Photos flow melalui `CameraCaptureView`, `CameraCaptureViewModel`, dan `CameraService`.
+- `CameraCaptureView` mengembalikan hasil melalui `onImageCaptured: (UIImage) -> Void`.
+- Goals onboarding disimpan ke `UserDefaults` dengan key `userGoals`.
+- Permission descriptions Camera dan Photo Library sudah dikonfigurasi di project settings.
 
-**Anti-goals:**
+Chatbot menggunakan camera-first entry. Home membuka Camera/Photos flow existing; setelah pengguna mengonfirmasi preview melalui **Use Photo**, aplikasi membuka ChatView dengan gambar sebagai draft attachment. Tidak ada tombol akses Chat sementara di Home.
 
-- Bukan app budgeting / expense tracker — tidak melacak pengeluaran
-- Bukan app yang menghakimi user — tone harus supportive, bukan judgmental
-- Bukan financial advisor — tidak memberikan saran investasi atau financial planning
-- Bukan e-commerce aggregator — tidak membandingkan harga antar toko
+## 3. Scope
 
----
+### Target chatbot MVP
 
-## 3. Scope & Constraints
+- Chat screen untuk text dan image attachment.
+- OpenRouter Chat Completions dengan developer prompt penuh pada role `developer`.
+- State machine percakapan diinfer model dari maksimal 12 pesan transcript terakhir.
+- Integrasi `CameraCaptureView` yang sudah ada; tidak membuat camera service atau picker kedua.
+- Preprocessing hasil camera/Photos: resize maksimum 2048 px, JPEG kualitas 0.82, dan data URL base64.
+- Summary Markdown yang tervalidasi sebelum action BUY/BYE muncul.
+- BUY/BYE dikirim sebagai user message agar model menjalankan fase penutup.
+- Completion screen berbeda untuk hasil BUY dan BYE.
+- Single-flight request, cancellation, error state, dan pencegahan duplicate send.
+- Transcript hanya hidup selama runtime chat; goals tetap persisten di `UserDefaults`.
+- API key dibaca dari environment developer dan disimpan ke Keychain.
 
-**In scope:**
+### Tidak termasuk MVP
 
-- AI-powered reflective chat dengan custom prompt framework
-- Camera capture untuk foto barang fisik → AI analysis
-- Screenshot Shortcut integration (OCR → extract nama & harga → auto-populate chat)
-- Share Extension untuk menerima link/gambar dari e-commerce apps
-- Manual input (copy-paste link / ketik di chat)
-- Conversation history (lokal)
-- Action plan recommendation berdasarkan jawaban user
+- SwiftData atau persistence untuk transcript/history chat.
+- OCR, object detection, atau image-analysis service terpisah.
+- Membaca isi product page dari URL, web search, tool/function calling, RAG, atau structured output.
+- Streaming response.
+- Screenshot Shortcut, Share Extension, link preview/parser, widget, dan reminder sebagai bagian chatbot.
+- Perubahan besar pada navigation Home di luar camera-first entry.
 
-**Out of scope:**
+### Roadmap
 
-- User authentication / account system
-- Cloud sync / multi-device
-- Social features (sharing results, leaderboard)
-- Price comparison / deal finder
-- Push notification / scheduled reminders (Phase 2)
-- Apple Watch companion app
-- iPad support
-- Widget / Live Activity
+- Home/chat-list final dan persistence history dengan migration plan.
+- Screenshot Shortcut dan OCR bila kebutuhan produk telah divalidasi.
+- Share Extension serta resolver URL melalui service/backend tersendiri.
+- Widget, recap, dan reminder.
+- Backend proxy, attestation, rate limiting, serta rotasi credential untuk production.
 
-**Technical constraints:**
+Item roadmap tidak boleh dimasukkan diam-diam ke request atau state chatbot MVP.
 
-- **Platform:** iOS 17+ (iPhone only)
-- **Auth:** None — semua data lokal
-- **AI Backend:** Google Gemini API (requires network)
-- **Local Storage:** SwiftData
-- **OCR:** Apple Vision framework (on-device)
-- **Accessibility:** WCAG AA — VoiceOver support, Dynamic Type
-- **Offline support:** Partial — conversation history available offline, AI features require internet
-- **Performance:** AI response < 5 detik, app launch < 2 detik
+## 4. Arsitektur target
 
----
+Project mempertahankan feature-based MVVM dengan shared Core layer.
 
-## 4. Jobs to Be Done (JTBD)
+```text
+BuydeeApp
+├── Onboarding feature
+│   └── UserDefaults: hasCompletedOnboarding, userGoals
+├── Home / ContentView
+│   └── Check It Together → Camera preview → ChatView + image draft
+├── Camera feature (existing)
+│   ├── CameraCaptureView
+│   ├── CameraCaptureViewModel
+│   └── Core/Managers/CameraService
+└── Chat feature
+    ├── Views
+    │   ├── ChatView + bubbles + composer
+    │   ├── Summary/decision presentation
+    │   └── DecisionCompletionView
+    ├── ViewModel
+    │   ├── runtime transcript/draft state
+    │   ├── send, retry, cancel, and navigation
+    │   └── Summary marker gate
+    ├── Models
+    │   ├── ChatMessage / ChatRole
+    │   ├── DraftImageAttachment
+    │   └── PurchaseDecision
+    ├── Services
+    │   ├── ChatServicing / OpenRouter service
+    │   ├── AIConfiguration
+    │   └── ImageAttachmentProcessor
+    └── Prompts
+        └── DeveloperPrompt
 
-| Priority | Job Statement |
-| -------- | ------------- |
-| J1 | When **saya mau checkout barang online**, I want to **dipaksa berhenti sebentar dan berpikir ulang**, so I can **menghindari penyesalan karena beli impulsif**. |
-| J2 | When **saya lihat barang bagus di toko fisik**, I want to **langsung foto dan dapat feedback apakah ini worth it**, so I can **membuat keputusan beli yang lebih rasional on the spot**. |
-| J3 | When **saya lagi scrolling Shopee/TikTok Shop dan nemu barang menarik**, I want to **screenshot langsung dan dapat analisis tanpa effort**, so I can **pause tanpa kehilangan momentum browsing**. |
-| J4 | When **saya sudah copy link produk dari e-commerce**, I want to **langsung share ke Buydee dan dapat guidance**, so I can **dengan cepat evaluate apakah ini pembelian yang bijak**. |
-| J5 | When **saya sudah selesai menjawab pertanyaan reflektif**, I want to **mendapat action plan yang jelas dan spesifik**, so I can **tahu exactly apa yang harus dilakukan selanjutnya (beli/tunda/skip)**. |
+Core
+├── DesignSystem/AppColor.swift
+├── DesignSystem/AppFont.swift
+├── Managers/CameraService.swift
+└── Security/OpenRouterCredentialStore.swift
+```
 
----
+Dependency flow:
 
-## 5. User Stories
+```text
+Home Check It Together → Camera/Photos preview → Use Photo → ChatView + image draft
+Chat View → Chat ViewModel → ChatServicing → OpenRouter REST
+                         ├→ DeveloperPrompt + UserDefaults goals
+                         ├→ CredentialStore → Keychain
+                         └→ ImageAttachmentProcessor
 
-| ID | Role | Action | Benefit | JTBD Ref |
-| --- | --- | --- | --- | --- |
-| US1 | User | Saya ingin memulai chat dengan AI tentang barang yang ingin saya beli | Sehingga saya bisa mendapat pertanyaan reflektif yang membantu saya berpikir ulang | J1 |
-| US2 | User | Saya ingin menjawab pertanyaan-pertanyaan reflektif dari AI | Sehingga AI bisa memahami motivasi dan kebutuhan saya terhadap barang tersebut | J1 |
-| US3 | User | Saya ingin mendapat action plan setelah selesai menjawab pertanyaan | Sehingga saya tahu harus beli, tunda, atau skip barang tersebut | J5 |
-| US4 | User | Saya ingin memfoto barang fisik dan langsung mendapat feedback AI | Sehingga saya bisa evaluate pembelian langsung di toko | J2 |
-| US5 | User | Saya ingin screenshot produk di Shopee/TikTok Shop dan otomatis masuk ke app | Sehingga nama dan harga produk sudah auto-extracted dan siap di-evaluate | J3 |
-| US6 | User | Saya ingin upload screenshot dari galeri ke chat AI | Sehingga saya bisa evaluate produk yang sudah saya simpan sebelumnya | J3 |
-| US7 | User | Saya ingin share link produk dari e-commerce ke Buydee | Sehingga AI langsung bisa analyze produk tanpa perlu copy-paste manual | J4 |
-| US8 | User | Saya ingin paste link produk di chat | Sehingga saya bisa manually evaluate produk dari link yang sudah di-copy | J4 |
-| US9 | User | Saya ingin melihat history conversation sebelumnya | Sehingga saya bisa review keputusan-keputusan yang sudah saya buat | J1 |
+Chat composer → existing CameraCaptureView
+CameraCaptureView → onImageCaptured(UIImage)
+→ image Data → ImageAttachmentProcessor → draft preview → OpenRouter vision input
+```
 
----
+Rules:
 
-## 6. Proposed Experience
+- View merender state dan meneruskan user intent; network/prompt logic tidak berada di View.
+- ViewModel mengakses AI melalui `ChatServicing`, bukan membangun HTTP payload sendiri.
+- Service tidak mengontrol layout atau navigation.
+- Camera feature bertanggung jawab sampai menghasilkan `UIImage`; chatbot bertanggung jawab atas konversi, preprocessing, draft, dan request multimodal.
+- Jangan menggandakan `CameraService`, `CameraCaptureView`, atau Photos picker yang sudah tersedia.
+- Shared dependency berada di `Core`; Feature tidak mengimpor Feature lain kecuali entry/integration composition di level app/Home.
 
-**Design Direction:**
-Buydee terasa seperti "teman bijak" yang muncul di saat yang tepat — warm, supportive, tapi jujur. UI-nya clean dan calming (bukan flashy) untuk menciptakan suasana reflektif. Mental model-nya adalah **chat companion** — semua interaksi terjadi dalam konteks percakapan, bukan form atau checklist.
+## 5. Design system dan kontrak UI
 
-**Key Screens / States:**
+Referensi desain menentukan komposisi layout dan bentuk komponen, bukan warna atau font. Semua warna harus berasal dari `Color.buydee`, termasuk token chat yang tersedia (`chatBackground`, `chatComposerBackground`, `chatAssistantBubble`, `chatUserBubble`, `chatSummaryBackground`, `chatMascotPlaceholder`, `chatByeBackground`, dan `chatError`). Typography memakai semantic tokens dari `AppFont.swift`, termasuk `.buydeeChatMessage`, `.buydeeChatButton`, `.buydeeChatSummaryTitle`, dan `.buydeeChatCompletionTitle`. Jika token baru diperlukan, perluas design system secara terpisah—jangan menaruh hard-coded style baru di feature chat.
 
-- **Home / Chat List** — Daftar conversation sebelumnya + tombol "New Check" untuk mulai conversation baru
-- **Chat View** — Conversational UI antara user dan Buydee AI. Mendukung text input, image attachment, dan link paste
-- **Camera Capture** — Full-screen camera untuk foto barang fisik, dengan preview sebelum submit ke AI
-- **Action Plan Card** — Hasil akhir dari reflective session: rekomendasi (Buy / Wait / Skip) dengan reasoning
-- **Empty state:** Ilustrasi friendly + copy "Mau beli sesuatu? Buydee siap bantu kamu mikir dulu 🤔"
-- **Error state:** Jika AI tidak bisa direach → "Koneksi terputus. Tapi coba tanya ke diri sendiri: Apakah kamu benar-benar butuh ini?" + retry button
-- **Loading state:** Typing indicator bubble (seperti iMessage) saat AI sedang merespons
+### Chat screen
 
-**Interaction Model:**
+- Diakses melalui camera-first flow dari Home dan dipresentasikan melalui navigation yang dapat kembali ke Home.
+- Back action di kiri atas.
+- Transcript scrollable; bubble user rata kanan dan bubble assistant rata kiri.
+- Rectangle menjadi placeholder maskot di kiri bubble assistant sampai mascot final tersedia.
+- Image bubble menjaga aspect ratio dan menampilkan gambar yang telah dipilih.
+- Jika user message berisi gambar dan caption, UI merender image bubble dan caption bubble secara terpisah. Service tetap mempertahankannya sebagai satu multimodal message agar konteks image–caption tidak terputus.
+- Composer sticky di bawah berisi input, Camera action, dan send action.
+- Camera action membuka `CameraCaptureView`; hasil `UIImage` diteruskan ke image processor sebagai draft attachment.
+- Response assistant merender Markdown H1–H6, bold, italic, inline code, link, unordered/ordered list, blockquote, fenced code block, dan highlight opsional `==...==`.
+- Saat request aktif, tampilkan teks supportive yang muted tanpa bubble (misalnya “Bentar ya, aku lagi bantu pikirin…”), disable seluruh action yang dapat mengirim, tetapi jangan menampilkan response parsial.
 
-- **Primary Flow (Manual):**
-  1. User tap "New Check" → masuk Chat View
-  2. User ketik/paste nama barang atau link → AI mulai bertanya
-  3. User jawab 3–5 pertanyaan reflektif
-  4. AI berikan action plan card
+### Readiness floating button
 
-- **Screenshot Shortcut Flow:**
-  1. User screenshot di e-commerce app
-  2. Shortcut trigger → OCR extract nama & harga
-  3. Buydee app terbuka → Chat View dengan pre-filled message
-  4. User tap send → AI mulai sesi reflektif
+Tombol “Are you ready to decide now?” tampil melayang tepat di atas composer setelah dua exchange lengkap: minimal dua user message yang masing-masing sudah memiliki assistant response.
 
-- **Camera Flow:**
-  1. User tap ikon kamera di Chat View
-  2. Foto barang → preview → confirm
-  3. AI analyze foto dan mulai sesi reflektif
+Tombol disembunyikan ketika:
 
-- **Share Extension Flow:**
-  1. User tap Share di e-commerce app
-  2. Pilih Buydee → app terbuka ke Chat View dengan link pre-filled
-  3. AI extract info dari link dan mulai sesi reflektif
+- request sedang aktif;
+- Summary valid sudah diterima; atau
+- keputusan sudah dipilih.
 
-- **Gallery Upload Flow:**
-  1. User buka Buydee → Chat View
-  2. Tap attachment → pilih foto dari galeri
-  3. AI analyze screenshot/foto dan mulai sesi reflektif
+CTA mengirim user message melalui pipeline normal yang meminta model merangkum berdasarkan konteks tersedia. CTA tidak boleh membuat Summary lokal atau langsung menampilkan BUY/BYE.
 
-**Accessibility Notes:**
+### Summary state
 
-- Full VoiceOver support — semua elemen chat harus accessible
-- Dynamic Type support — chat bubbles harus scale properly
-- Minimum contrast ratio 4.5:1 untuk teks
-- Haptic feedback pada action plan reveal
-- Camera capture harus accessible via VoiceOver
+- Summary tampil sebagai card/bubble seperti referensi dan memakai `AppColor`/`AppFont`.
+- UI hanya merender konteks, PROS, dan CONS yang diberikan model; UI tidak menambahkan reasoning.
+- BUY dan BYE mempunyai hierarki visual yang setara dan baru tampil setelah marker strict tervalidasi.
 
-**Figma / Design Link:** [placeholder — add link when available]
+### Completion
 
----
+- Saat BUY/BYE ditap, kirim pilihan sebagai user message dan segera navigasikan ke halaman baru bertipe `PurchaseDecision`, sesuai interaksi pada referensi.
+- BYE menampilkan pengguna memilih tidak membeli sekarang; BUY menampilkan pengguna memilih membeli.
+- Layout mengikuti referensi: headline, rectangle placeholder maskot, curved/raised result surface, deskripsi, dan satu tombol selesai.
+- Copy kedua halaman netral; tidak menyiratkan satu keputusan lebih baik.
+- Tombol selesai menghapus runtime chat dan kembali ke destination aplikasi yang ditentukan.
 
-## 7. Component Inventory
+### Accessibility
 
-| Component | Type | Description | Linked Stories |
-| --- | --- | --- | --- |
-| `ChatListView` | Layout | Daftar semua conversation sebelumnya, sorted by date. Pull-to-refresh. | US9 |
-| `ChatListItemCard` | Display | Card untuk setiap conversation — menampilkan item name, date, dan outcome (Buy/Wait/Skip badge) | US9 |
-| `ChatView` | Layout | Main conversational UI. ScrollView dengan message bubbles, input bar di bawah. | US1, US2, US3 |
-| `MessageBubble` | Display | Chat bubble — variant untuk user message (kanan) dan AI message (kiri). Support text, image preview, dan link preview. | US1, US2 |
-| `ChatInputBar` | Form | Text field + send button + attachment menu (camera, gallery, paste). Sticky di bottom. | US1, US4, US6, US8 |
-| `AttachmentMenu` | Action | Bottom sheet / popover menu: Camera, Photo Library, Paste Link | US4, US6, US8 |
-| `CameraCaptureView` | Layout | Full-screen camera dengan capture button, flash toggle, dan cancel. Preview mode setelah foto. | US4 |
-| `ImagePreviewBubble` | Display | Thumbnail image di dalam chat bubble (user's photo/screenshot) | US4, US6 |
-| `LinkPreviewCard` | Display | Rich preview card di dalam chat — menampilkan product image, nama, harga (jika bisa di-extract) | US7, US8 |
-| `ActionPlanCard` | Display | Card hasil akhir — badge (Buy ✅ / Wait ⏳ / Skip ❌), reasoning summary, dan suggested next step | US3 |
-| `TypingIndicator` | Display | Animated dots (…) saat AI sedang memproses respons | US1, US2 |
-| `EmptyStateView` | Display | Ilustrasi + copy untuk empty chat list | — |
-| `ErrorBanner` | Display | Inline error message (no connection, API error) dengan retry action | — |
-| `NewCheckButton` | Action | Floating/prominent button di Home untuk mulai conversation baru | US1 |
-| `PreFilledMessageView` | Display | Message bubble yang sudah terisi dari Shortcut/Share Extension, siap di-send | US5, US7 |
-| `ShareExtensionView` | Layout | Compact UI di Share Sheet — menampilkan Buydee icon, brief confirmation, lalu buka app | US7 |
+- Dynamic Type tidak boleh menyebabkan clipping pada bubbles, Summary, composer, atau completion.
+- VoiceOver labels/hints tersedia untuk back, Camera, gallery action dari camera screen, image preview/remove, send, readiness, BUY, BYE, dan finish.
+- Tap target mengikuti minimum platform 44×44 pt.
+- Fokus mengikuti urutan visual; status loading dan error diumumkan secara aksesibel.
 
----
+## 6. Runtime state dan persistence
 
-## 8. Data Models
+```text
+ChatMessage
+- id: UUID
+- role: user | assistant
+- content: String
+- imageData: optional processed JPEG Data
 
-```swift
-// MARK: - Core Models (SwiftData)
+DraftImageAttachment
+- jpegData: Data
+- dataURL: data:image/jpeg;base64,...
 
-@Model
-class Conversation {
-    var id: UUID                          // Unique identifier
-    var createdAt: Date                   // When conversation started
-    var updatedAt: Date                   // Last message timestamp
-    var itemName: String?                 // Extracted or user-provided item name
-    var itemPrice: String?                // Extracted or user-provided price
-    var itemImageData: Data?              // Thumbnail of item (photo/screenshot)
-    var sourceType: ConversationSource    // How the conversation was initiated
-    var sourceURL: String?                // E-commerce link if provided
-    var outcome: ConversationOutcome?     // Final recommendation (nil if incomplete)
-    var actionPlanSummary: String?        // AI's reasoning for the outcome
-    
-    @Relationship(deleteRule: .cascade)
-    var messages: [Message]               // All messages in this conversation
-}
+Runtime state
+- messages: [ChatMessage]
+- draftText: String
+- draftImage: DraftImageAttachment?
+- isGenerating: Bool
+- active request/cancellation handle
+- error state
+- selected decision
+- navigation destination
+```
 
-@Model
-class Message {
-    var id: UUID
-    var createdAt: Date
-    var role: MessageRole                 // .user or .assistant
-    var content: String                   // Text content
-    var imageData: Data?                  // Attached image (photo/screenshot)
-    var messageType: MessageType          // .text, .image, .link, .actionPlan
-    
-    var conversation: Conversation?       // Back-reference
-}
+Transcript dan attachment tidak disimpan ke `UserDefaults`, SwiftData, file, atau Keychain pada MVP. New chat/finish menghapus transcript dan draft setelah membatalkan request aktif.
 
-// MARK: - Enums
+| Data | Storage | Contract |
+|---|---|---|
+| `hasCompletedOnboarding` | `@AppStorage` / `UserDefaults` | App entry routing. |
+| `userGoals` | `UserDefaults` | Context ringan untuk developer prompt. |
+| `hasSeenCameraGuide` | `UserDefaults` | Existing camera guide state. |
+| OpenRouter API key | Keychain | Credential saja; tidak boleh dicatat ke log. |
 
-enum ConversationSource: String, Codable {
-    case manual          // User typed manually
-    case camera          // User took a photo
-    case screenshot      // Via Shortcut (screenshot + OCR)
-    case shareExtension  // Via Share Extension (link)
-    case galleryUpload   // User uploaded from photo library
-}
+Goals di-trim lalu karakter XML (`&`, `<`, `>`, quote) di-escape sebelum dimasukkan ke `<user_context>`. Goals adalah data tidak tepercaya. Jika kosong, render `Belum diisi`; developer prompt melarang model menyebut field tersebut.
 
-enum ConversationOutcome: String, Codable {
-    case buy             // AI recommends buying
-    case wait            // AI recommends waiting/delaying
-    case skip            // AI recommends skipping
-}
+## 7. Konfigurasi OpenRouter
 
-enum MessageRole: String, Codable {
-    case user
-    case assistant
-}
+| Property | MVP value |
+|---|---|
+| API | OpenRouter Chat Completions |
+| Endpoint | `https://openrouter.ai/api/v1/chat/completions` |
+| Default model | `openai/gpt-5.6-luna` |
+| Instruction role | `developer` |
+| History window | Maksimal 12 transcript messages |
+| Maximum output | 2.048 tokens |
+| Timeout | 90 seconds |
+| Streaming | Disabled |
+| Temperature/top-p | Provider/model default |
+| Tools/structured output | None |
 
-enum MessageType: String, Codable {
-    case text
-    case image
-    case link
-    case actionPlan
+`AIConfiguration.default` menjadi source of truth untuk nilai konfigurasi. Gunakan REST langsung; Gemini SDK dan endpoint Gemini tidak digunakan.
+
+### Request ordering
+
+Untuk setiap send:
+
+1. Ambil snapshot maksimal 12 message transcript terakhir sebelum latest message.
+2. Append latest user message ke UI tepat sekali.
+3. Render developer prompt penuh menggunakan goals terkini.
+4. Susun request: developer message, history kronologis, lalu latest user message.
+5. Kirim request non-streaming.
+6. Ambil teks pertama yang tidak kosong dari `choices[].message.content`, dengan fallback `choices[].text`.
+7. Append assistant response tepat sekali jika request masih aktif/current.
+8. Evaluasi strict Summary marker pada assistant response terakhir.
+
+Payload minimum:
+
+```json
+{
+  "model": "openai/gpt-5.6-luna",
+  "messages": [
+    { "role": "developer", "content": "<full rendered developer prompt>" },
+    { "role": "user", "content": "Sepatu ini Rp1.500.000" }
+  ],
+  "max_tokens": 2048
 }
 ```
 
----
+Gambar lama yang masih termasuk window 12 message dikirim ulang untuk fidelity konteks. Optimasi biaya/token harus menjadi perubahan kontrak yang disengaja.
 
-## 9. API / Integration Surface
+## 8. State machine prompt
 
-### Google Gemini API
+Aplikasi tidak menyimpan phase enum. Developer prompt menginstruksikan model menginfer fase dari history yang diterima.
 
-| Method | Endpoint | Description | Auth Required | Notes |
-| --- | --- | --- | --- | --- |
-| POST | `generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent` | Send text prompt + optional image to Gemini | API Key | Supports multimodal (text + image) |
-| POST | `generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent` | Stream response for real-time typing effect | API Key | Use for better UX with typing indicator |
+### Phase A — Capture & Open
 
-### On-Device APIs
+- Nama/jenis produk dan harga wajib diketahui sebelum eksplorasi.
+- Jika salah satu belum jelas, tanyakan tepat satu klarifikasi tanpa pertanyaan DARN pada response yang sama.
+- Jangan menguatkan promo dengan framing nominal “hemat Rp…”.
 
-| Framework | Usage | Description |
-| --- | --- | --- |
-| **Vision (VNRecognizeTextRequest)** | OCR | Extract text from screenshot — parse item name and price |
-| **PhotosUI (PHPickerViewController)** | Gallery Access | Pick images from photo library |
-| **AVFoundation** | Camera | Capture photos of physical items |
-| **App Intents / Shortcuts** | Screenshot Shortcut | Automate: screenshot → OCR → open Buydee with pre-filled data |
-| **Share Extension (NSExtensionItem)** | Share Sheet | Receive shared links/images from e-commerce apps |
-| **SwiftData** | Local Persistence | Store conversations and messages on-device |
+### Phase B — Explore
 
-**External integrations:**
+Setiap response berisi maksimal dua kalimat reaksi/insight, satu Markdown heading `#` sepanjang 2–5 kata, dan tepat satu pertanyaan terbuka. Desire, Ability, Reason, dan Need adalah intent, bukan checklist empat pertanyaan. Jangan mengulang intent yang sudah terjawab atau pernah ditanyakan tanpa jawaban.
 
-- **Google Generative AI Swift SDK** (`google-generative-ai-swift`) — official Gemini SDK for iOS
-- **No backend server needed** — direct client-to-API communication with API key
+### Phase C — DARN Gate
 
----
+Kecukupan dinilai dari keseluruhan history. Satu jawaban boleh memenuhi beberapa intent. Jika decision fatigue tinggi, model boleh mengambil jalur pendek, tetapi Summary tetap wajib dan fakta yang hilang tidak boleh dikarang.
 
-## 10. State Management Map
+### Phase D — Summary & Choice
 
-| State | Location | Persistence | Notes |
-| --- | --- | --- | --- |
-| `conversations` | SwiftData (ModelContext) | Persistent | All past and active conversations |
-| `messages` | SwiftData (ModelContext) | Persistent | All messages within conversations |
-| `currentConversation` | Local UI (@State) | Session | Active conversation being viewed |
-| `chatInputText` | Local UI (@State) | None | Current text in chat input field |
-| `isAIResponding` | Local UI (@State) | None | Controls typing indicator visibility |
-| `cameraState` | Local UI (@State) | None | Camera preview, captured image |
-| `preFilledData` | App Intent / URL Scheme | Session | Data from Shortcut or Share Extension, consumed on app open |
-| `geminiAPIKey` | Keychain / Bundled Config | Persistent | API key for Gemini (bundled or stored securely) |
-| `aiConversationHistory` | In-memory array | Session | Full message history sent to Gemini for context |
-| `networkStatus` | NWPathMonitor | None | Online/offline state for showing error banner |
+Summary memuat produk, harga, situasi singkat, PROS, CONS, dan pertanyaan netral BUY/BYE. PROS/CONS hanya berasal dari pengguna. Maksimal satu perbandingan goal–harga boleh digunakan jika benar-benar relevan dan hanya memakai nominal yang tersedia.
 
----
+### Phase E — Close
 
-## 11. Tech Stack
+Setelah user memilih BUY/BYE, pilihan tetap diteruskan ke model sebagai user message agar kontrak Phase E tidak hilang. Model menerima pilihan secara netral, boleh memberikan maksimal satu pertanyaan takeaway, lalu menutup singkat. UI completion tidak menunggu response ini untuk berpindah halaman; task yang masih aktif tetap harus dikelola atau dibatalkan secara eksplisit agar tidak menghasilkan state liar.
 
-| Layer | Choice | Rationale |
-| --- | --- | --- |
-| **Frontend** | SwiftUI (iOS 17+) | Native performance, declarative UI, required for Apple Academy |
-| **Styling** | Native SwiftUI modifiers + custom design system | Consistent with iOS Human Interface Guidelines |
-| **AI Backend** | Google Gemini 2.0 Flash via REST / Swift SDK | Multimodal (text + vision), fast response, cost-effective |
-| **Database** | SwiftData | Modern Apple persistence framework, seamless SwiftUI integration |
-| **Auth** | None | Not needed — fully local data |
-| **OCR** | Apple Vision framework | On-device, no network needed, accurate for text extraction |
-| **Hosting** | N/A (native app) | Distributed via TestFlight / App Store |
-| **Key libraries** | `GoogleGenerativeAI` (Gemini SDK), `SwiftData`, `Vision`, `AVFoundation`, `PhotosUI` | All first-party Apple + official Google SDK |
+## 9. Strict Summary contract
 
----
+Output Summary yang diharapkan:
 
-## 12. Suggested File Structure
+```markdown
+Sebentar aku rangkum dulu ya—biar kamu bisa melihat seluruh gambarannya sebelum memilih.
 
-```
-buydee/
-├── buydeeApp.swift                          # App entry point, environment setup
-├── Info.plist                              # App configuration
-│
-├── Models/
-│   ├── Conversation.swift                  # SwiftData model
-│   ├── Message.swift                       # SwiftData model
-│   └── Enums.swift                         # ConversationSource, Outcome, MessageRole, MessageType
-│
-├── Views/
-│   ├── Home/
-│   │   ├── ChatListView.swift              # Main screen — list of conversations
-│   │   ├── ChatListItemCard.swift          # Individual conversation card
-│   │   ├── EmptyStateView.swift            # Empty state illustration
-│   │   └── NewCheckButton.swift            # CTA to start new conversation
-│   │
-│   ├── Chat/
-│   │   ├── ChatView.swift                  # Main chat interface
-│   │   ├── MessageBubble.swift             # Chat bubble (user/AI variants)
-│   │   ├── ChatInputBar.swift              # Input field + attachment menu
-│   │   ├── TypingIndicator.swift           # AI typing animation
-│   │   ├── ImagePreviewBubble.swift        # Image in chat
-│   │   ├── LinkPreviewCard.swift           # Link preview in chat
-│   │   ├── ActionPlanCard.swift            # Final recommendation card
-│   │   └── PreFilledMessageView.swift      # Pre-filled from Shortcut/Share
-│   │
-│   ├── Camera/
-│   │   └── CameraCaptureView.swift         # Camera capture + preview
-│   │
-│   └── Components/
-│       ├── AttachmentMenu.swift             # Bottom sheet for attachments
-│       └── ErrorBanner.swift                # Network error banner
-│
-├── Services/
-│   ├── GeminiService.swift                 # Gemini API integration + prompt management
-│   ├── OCRService.swift                    # Vision framework text extraction
-│   ├── ImageAnalysisService.swift          # Process camera/screenshot images
-│   └── ConversationManager.swift           # Business logic for conversation flow
-│
-├── Prompts/
-│   ├── SystemPrompt.swift                  # Base system prompt for Buydee AI persona
-│   ├── ReflectiveQuestionFramework.swift   # Question framework configuration
-│   └── ActionPlanTemplates.swift           # Action plan response templates
-│
-├── Utilities/
-│   ├── LinkParser.swift                    # Extract product info from e-commerce URLs
-│   ├── PriceExtractor.swift                # Parse price from OCR text
-│   └── HapticManager.swift                 # Haptic feedback utility
-│
-├── Extensions/
-│   ├── Date+Extensions.swift               # Date formatting helpers
-│   └── View+Extensions.swift               # Reusable view modifiers
-│
-├── BuydeeShareExtension/                    # Share Extension target
-│   ├── ShareViewController.swift           # Handle incoming shared content
-│   ├── Info.plist
-│   └── MainInterface.storyboard
-│
-├── BuydeeShortcuts/                         # App Intents for Shortcuts
-│   ├── ScreenshotAnalyzeIntent.swift       # Shortcut: Screenshot → OCR → Open App
-│   └── AppShortcutsProvider.swift          # Register available shortcuts
-│
-└── Assets.xcassets/
-    ├── AppIcon.appiconset/
-    ├── Colors/                             # Custom color assets
-    └── Images/                             # Empty state illustrations, icons
+[Produk, harga, dan situasi]
+
+**PROS:**
+- …
+**CONS:**
+- …
+
+Dari semua yang kita bahas—kamu mau pilih **BUY** (beli sekarang) atau **BYE** (tidak beli sekarang)?
 ```
 
----
+Decision buttons hanya tampil ketika assistant response terakhir memiliki semua marker berikut, case-insensitive:
 
-## 13. Acceptance Criteria
+- `**PROS:**`
+- `**CONS:**`
+- `**BUY**`
+- `**BYE**`
 
-**US1 — Memulai chat dengan AI**
+Bold marker dan colon pada PROS/CONS wajib. Selain marker, `DecisionSummary` harus berhasil mem-parsing sedikitnya satu item PROS dan satu item CONS. Button tidak tampil saat generating. UI tidak boleh menebak Summary hanya dari bubble count, DARN phase, atau isi yang mirip.
 
-- [ ] User bisa tap "New Check" dari Home dan masuk ke Chat View kosong
-- [ ] User bisa mengetik nama barang / deskripsi di chat input dan mengirim
-- [ ] AI merespons dengan pertanyaan reflektif pertama dalam < 5 detik
-- [ ] Typing indicator muncul selama AI memproses
-- [ ] Conversation otomatis tersimpan di SwiftData
+Tap button mengirim salah satu message berikut sebagai role `user` melalui pipeline normal:
 
-**US2 — Menjawab pertanyaan reflektif**
+```text
+BUY — Beli sekarang
+```
 
-- [ ] AI mengajukan pertanyaan satu per satu (bukan semua sekaligus)
-- [ ] User bisa menjawab dengan free text
-- [ ] AI follow-up question relevan dengan jawaban sebelumnya
-- [ ] Total pertanyaan 3–5 sebelum memberikan action plan
-- [ ] Conversation context dipertahankan antar pertanyaan
+```text
+BYE — Tidak beli sekarang
+```
 
-**US3 — Mendapat action plan**
+Disable kedua button segera setelah tap agar pilihan dan request Phase E hanya terkirim sekali.
 
-- [ ] Setelah selesai reflective questions, AI menampilkan ActionPlanCard
-- [ ] Card menampilkan outcome badge (Buy ✅ / Wait ⏳ / Skip ❌)
-- [ ] Card berisi reasoning summary (2–3 bullet points)
-- [ ] Card berisi suggested next step yang spesifik
-- [ ] Outcome tersimpan di conversation record
-- [ ] Haptic feedback saat action plan muncul
+## 10. Pipeline gambar dan kamera
 
-**US4 — Foto barang fisik via kamera**
+Gunakan flow existing:
 
-- [ ] User bisa tap ikon kamera di ChatInputBar
-- [ ] Camera view terbuka full-screen dengan capture button
-- [ ] Setelah foto, user melihat preview dan bisa retake atau confirm
-- [ ] Foto dikirim sebagai message bubble di chat
-- [ ] AI menganalisis foto dan memulai sesi reflektif
-- [ ] Edge case: Camera permission denied → tampilkan Settings redirect
+```text
+Chat Camera action
+→ present CameraCaptureView
+→ CameraService capture ATAU PhotosPicker existing
+→ preview/retake/use photo di CameraCaptureView
+→ onImageCaptured(UIImage)
+→ convert ke source Data
+→ validate/decode + apply orientation
+→ proportional resize; longest side max 2048 px
+→ JPEG sRGB quality 0.82
+→ store DraftImageAttachment + preview/remove di composer
+→ data:image/jpeg;base64,...
+→ OpenRouter multimodal message
+```
 
-**US5 — Screenshot via Shortcut**
+Jangan membuat flow kamera/Photos baru. Pertahankan lifecycle, cancel, permission denied, guide, flash error, retake, dan use-photo behavior milik feature Camera. Cancel tidak membuat draft atau mengirim AI request.
 
-- [ ] Shortcut tersedia di Shortcuts app setelah install Buydee
-- [ ] Setelah screenshot di e-commerce app, Shortcut trigger-able dari Action Button
-- [ ] OCR extract text dari screenshot
-- [ ] Nama barang dan harga diparsing dari OCR result
-- [ ] Buydee app terbuka dengan Chat View + pre-filled message berisi nama & harga
-- [ ] User hanya perlu tap send
-- [ ] Edge case: OCR gagal extract → pre-fill dengan raw text, AI coba parse sendiri
+Jika gambar dikirim tanpa caption, gunakan internal prompt:
 
-**US6 — Upload screenshot dari galeri**
+```text
+Identifikasi barang dan harga yang terlihat, lalu bantu aku mempertimbangkannya sebelum membeli.
+```
 
-- [ ] User bisa tap attachment → Photo Library
-- [ ] Photo picker muncul (PHPicker) dengan filter image only
-- [ ] Selected image muncul di chat sebagai message
-- [ ] AI menganalisis gambar dan mulai sesi reflektif
-- [ ] Edge case: Gambar bukan produk → AI gracefully handle ("Hmm, ini bukan barang belanja ya?")
+Multimodal content:
 
-**US7 — Share link via Share Extension**
+```json
+[
+  { "type": "text", "text": "<caption or internal image prompt>" },
+  { "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,<BASE64>" } }
+]
+```
 
-- [ ] Share Extension muncul di Share Sheet dari Safari, Shopee, TikTok, dll
-- [ ] Setelah tap Buydee di Share Sheet, app terbuka
-- [ ] Link otomatis muncul di Chat View sebagai pre-filled message
-- [ ] AI detect bahwa ini adalah link produk dan mulai sesi reflektif
-- [ ] Edge case: Link bukan e-commerce → AI handle gracefully
+Model vision yang sama mengidentifikasi produk/harga dan mengikuti state machine pada satu request. Jangan menambah OCR, classifier, object detection, atau image-analysis request terpisah.
 
-**US8 — Paste link di chat**
+## 11. URL handling
 
-- [ ] User bisa paste link di chat input field
-- [ ] Link detected dan ditampilkan sebagai LinkPreviewCard (jika memungkinkan)
-- [ ] AI memproses link dan mulai sesi reflektif
-- [ ] Fallback: jika link preview gagal, tetap kirim sebagai plain text
+Pesan URL HTTP/HTTPS tanpa gambar tidak dikirim ke AI. MVP tidak memiliki browsing atau product-page extraction; mengirim URL langsung akan mendorong model menebak isi produk.
 
-**US9 — History conversation**
+Jika composer menerima link-only:
 
-- [ ] Home menampilkan list semua conversation, sorted by newest first
-- [ ] Setiap card menampilkan: item name (atau "Untitled"), date, outcome badge
-- [ ] Tap card → masuk ke Chat View dengan full conversation history
-- [ ] Swipe to delete conversation
-- [ ] Empty state ditampilkan jika belum ada conversation
-- [ ] Edge case: Incomplete conversation (no outcome) ditampilkan dengan "In Progress" badge
+1. Tolak sebelum append transcript/send.
+2. Tampilkan pesan agar user memasukkan nama produk dan harga atau mengambil/memilih gambar melalui camera flow.
+3. Pertahankan draft agar dapat diedit.
 
----
+Resolver redirect non-AI, Share Extension, dan rich link parsing adalah roadmap terpisah.
 
-## 14. Open Questions & Risks
+## 12. Single-flight, cancellation, dan retry
 
-- **Q:** Apa framework pertanyaan reflektif yang spesifik? (misal: Need vs Want matrix, 72-hour rule, dsb.) — _Owner: Product/Design Team_
-- **Q:** Apa saja action plan templates yang sudah di-specify? Berapa banyak variasi? — _Owner: Product/Design Team_
-- **Q:** Bagaimana handling Gemini API key? Bundled di app atau environment variable? — _Owner: Engineering_
-- **Q:** Apakah ada rate limiting concern untuk Gemini API di free tier? — _Owner: Engineering_
-- **Q:** Untuk Share Extension, apakah cukup handle link saja atau juga gambar dari e-commerce apps? — _Owner: Product_
-- **Q:** Bagaimana tone of voice AI? Bahasa Indonesia, English, atau campur? — _Owner: Product/Design_
-- **Risk:** Gemini API latency bisa > 5 detik pada peak hours — _Mitigation: Streaming response + typing indicator untuk perceived performance_
-- **Risk:** OCR accuracy untuk screenshot e-commerce yang complex (banyak elemen) — _Mitigation: AI sebagai fallback parser, extract nama & harga dari raw OCR text_
-- **Risk:** Share Extension dan Shortcuts setup bisa complex dan error-prone — _Mitigation: Prioritaskan manual input + camera dulu, Shortcut/Share Extension sebagai enhancement_
-- **Tradeoff:** Menggunakan Gemini API langsung dari client (no backend) berarti API key exposed di app binary — acceptable untuk Academy challenge, tapi tidak untuk production
+- Maksimal satu AI request aktif per chat.
+- Text send, readiness CTA, Camera send, dan BUY/BYE disabled saat `isGenerating == true`.
+- Rapid/double tap tidak boleh membuat duplicate bubble atau network request.
+- Request dapat dibatalkan ketika user back, memulai chat baru, memilih finish, atau ViewModel dilepas.
+- Response dari task cancelled atau request obsolete tidak boleh masuk transcript atau memicu navigation.
+- Response tidak di-stream; typing indicator hanya mewakili request aktif.
+- Retry memakai message/draft yang sama tanpa append user bubble kedua. Implementasi harus membedakan retry network dengan user send baru.
 
----
+## 13. Error handling
 
-## 15. Rollout & Next Steps
+| Condition | Required behavior |
+|---|---|
+| API key missing | Tampilkan instruksi setup; jangan request. |
+| Empty text and no image | Send disabled/no-op. |
+| URL-only | Jangan append/send; minta nama+harga atau gambar. |
+| Invalid image/encoding failure | Pertahankan draft text, tampilkan error lokal. |
+| Camera cancel | Kembali ke chat tanpa draft palsu. |
+| Camera permission denied | Gunakan existing Settings redirect UI. |
+| HTTP non-2xx | Error retryable, tanpa duplicate user message. |
+| Invalid/empty response | Error retryable; jangan tampilkan decision buttons. |
+| Timeout/cancel | Stop loading dan abaikan late response. |
+| Product/price ambiguous | Model menanyakan tepat satu klarifikasi. |
+| Prompt injection in goals | Abaikan instruksi; perlakukan goals sebagai data. |
+| Crisis/self-harm | Hentikan protokol belanja dan arahkan ke bantuan langsung. |
 
-**MVP scope (Week 1–2):** The smallest shippable version that validates the core JTBD.
+## 14. Security dan privacy
 
-- Includes:
-  - Chat View dengan AI reflective conversation (Gemini)
-  - Custom system prompt + reflective question framework
-  - Action Plan Card (Buy/Wait/Skip)
-  - Camera capture → AI analysis
-  - Conversation history (SwiftData)
-  - Basic Home/Chat List
+- `OPENROUTER_API_KEY` dibaca dari environment Xcode saat development bootstrap, lalu disimpan di Keychain dengan accessibility yang sesuai untuk device.
+- Jika environment kosong, aplikasi mencoba credential yang sudah ada di Keychain.
+- API key tidak boleh berada di Swift source, plist, asset, test fixture, log, screenshot, README value, atau commit.
+- Jangan log request body karena berisi transcript, goals, dan mungkin base64 image.
+- Goals disimpan lokal; transcript dan image runtime tidak dipersistensikan dalam MVP.
+- Keychain mengamankan storage lokal, bukan menjamin secret tidak dapat diekstrak dari distributed client. Production memerlukan backend proxy dan kontrol abuse.
 
-- Excludes:
-  - Screenshot Shortcut integration
-  - Share Extension
-  - Link preview parsing
-  - Gallery upload
+## 15. Acceptance criteria
 
-**Phase 2 (Week 3–4):** Enhanced input methods.
+### Navigation dan UI
 
-- Screenshot Shortcut (OCR → pre-fill chat)
-- Share Extension (receive links from e-commerce)
-- Gallery upload (photo library picker)
-- Link preview cards
-- Polish: animations, haptics, empty states
+- [ ] Home membuka Camera/Photos flow; **Use Photo** membuka ChatView dengan image draft, dan back kembali ke Home.
+- [ ] Chat, Summary, dan completion memakai `Color.buydee` dan fonts dari `AppFont.swift`.
+- [ ] Rectangle muncul sebagai mascot placeholder di sisi assistant.
+- [ ] Readiness CTA muncul setelah dua exchange lengkap dan tidak mem-bypass Summary.
+- [ ] Layout tetap usable pada Dynamic Type dan elemen interaktif memiliki VoiceOver label.
 
-**Phase 3+ (Post-challenge ideas):**
+### AI request
 
-- Push notifications — "Sudah 48 jam sejak kamu mau beli X. Masih mau?"
-- Spending pattern insights dari conversation history
-- Widget — quick "Am I buying impulsively?" check
-- Siri integration — "Hey Siri, Buydee should I buy this?"
-- Community challenges — "30 Day No Impulse Buy"
+- [ ] Endpoint, model, output token, timeout, dan history mengikuti `AIConfiguration.default`.
+- [ ] Developer prompt penuh dikirim dengan role `developer` pada setiap request.
+- [ ] Maksimal 12 history messages dikirim berurutan sebelum latest message.
+- [ ] Goals terkini di-trim, di-escape, dan dianggap data tidak tepercaya.
+- [ ] Response non-streaming; hanya satu request dapat aktif.
+- [ ] Cancellation mengabaikan late response dan double tap tidak menduplikasi send.
+- [ ] Transcript hilang pada new chat/finish, sedangkan goals tersedia setelah relaunch.
 
-**Sign-off needed from:**
+### Camera dan image
 
-- [ ] PM / Product Owner
-- [ ] Engineering Lead
-- [ ] Design Lead
-- [ ] Academy Mentor / Coach
+- [ ] Camera action menggunakan `CameraCaptureView`/`CameraService` existing.
+- [ ] Camera dan Photos existing sama-sama mengirim hasil melalui `onImageCaptured`.
+- [ ] Hasil diproses ke longest side maksimum 2048 px dan JPEG quality 0.82.
+- [ ] Draft preview/remove bekerja sebelum send.
+- [ ] Image-only memakai internal prompt yang ditentukan.
+- [ ] Satu multimodal request dikirim ke model vision; tidak ada OCR/image service kedua.
 
-**Next steps:**
+### Summary dan decision
 
-1. **Finalize reflective question framework & action plan templates** — _Owner: Product/Design, by Week 0_
-2. **Design system & UI mockups in Figma** — _Owner: Design, by Week 0_
-3. **Set up Xcode project + SwiftData models** — _Owner: Engineering, by Day 1_
-4. **Implement Gemini API integration + system prompt** — _Owner: Engineering, by Week 1_
-5. **Build Chat UI** — _Owner: Engineering, by Week 1_
-6. **Implement Camera + OCR** — _Owner: Engineering, by Week 2_
-7. **Build Shortcuts + Share Extension** — _Owner: Engineering, by Week 3_
-8. **QA + Polish + TestFlight** — _Owner: All, by Week 4_
+- [ ] BUY/BYE hanya muncul jika empat strict marker ada pada assistant response terakhir dan `DecisionSummary` berhasil diparse.
+- [ ] BUY/BYE tidak muncul saat generating atau hanya berdasarkan bubble count.
+- [ ] Tap decision mengirim exact user message dan hanya memicu Phase E sekali.
+- [ ] Tap BUY/BYE mengirim user message sekali dan langsung membuka completion screen yang sesuai.
+- [ ] Kedua outcome memakai copy netral.
+
+### Verification scenarios
+
+- [ ] Product dan harga lengkap langsung memicu satu pertanyaan eksplorasi.
+- [ ] Product ambigu atau harga hilang hanya memicu satu klarifikasi.
+- [ ] Rich answer dapat memenuhi beberapa DARN intent tanpa pertanyaan berulang.
+- [ ] Decision fatigue tetap menghasilkan Summary.
+- [ ] Summary hanya menggunakan fakta user dan marker lengkap.
+- [ ] BUY dan BYE diterima setara.
+- [ ] Prompt injection dalam `userGoals` diabaikan.
+- [ ] Camera capture, Photos selection, retake, cancel, permission denied, dan invalid image terverifikasi.
+- [ ] URL-only tidak pernah diteruskan ke OpenRouter.
+- [ ] Double tap, timeout, cancel, retry, dan back tidak membuat response/message duplikat.
+
+## 16. Urutan implementasi
+
+1. Tambahkan Chat models, `ChatServicing`, `AIConfiguration`, credential store, image processor, dan developer prompt penuh.
+2. Implementasikan dan test OpenRouter request/response mapping.
+3. Implementasikan Chat ViewModel: runtime transcript, goals, single-flight, cancellation, retry, marker gate, dan typed navigation.
+4. Hubungkan **Check It Together** di Home ke Camera/Photos preview, lalu navigasikan **Use Photo** ke ChatView dengan image draft.
+5. Bangun chat UI dengan `AppColor`/`AppFont`, rectangle mascot placeholder, composer, Markdown, dan readiness CTA.
+6. Integrasikan composer ke `CameraCaptureView.onImageCaptured`; teruskan hasil ke image processor tanpa mengubah camera service.
+7. Implementasikan strict Summary gate, user-message BUY/BYE, dan completion pages.
+8. Jalankan seluruh acceptance scenarios sebelum mengerjakan roadmap.
