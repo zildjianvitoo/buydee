@@ -19,7 +19,7 @@ struct OnboardingPage1View: View {
                     .foregroundStyle(Color.buydee.primaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 32)
-                    .padding(.top, 40)
+                    .padding(.top, 36)
                 Spacer()
                 
                 ZStack {

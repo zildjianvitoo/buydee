@@ -14,7 +14,7 @@ struct OnboardingPage2View: View {
     // MARK: - Body
     var body: some View {
         VStack {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 20) {
                     Text("Let's take another look before you buy!")
                         .font(.buydeeLargeTitle)
                         .foregroundStyle(Color.buydee.primaryText)
@@ -25,7 +25,7 @@ struct OnboardingPage2View: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 32)
-                .padding(.top, 40)
+                .padding(.top, 36)
                 .padding(.bottom, 30)
 
                 ZStack {

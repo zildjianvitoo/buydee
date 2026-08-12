@@ -13,11 +13,11 @@ struct OnboardingPage3View: View {
 
     // MARK: - Body
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 20) {
             Text("So, here's how\nwe'll do it.")
                 .font(.buydeeLargeTitle)
                 .foregroundStyle(Color.buydee.primaryText)
-                .padding(.top, 40)
+                .padding(.top, 36)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineLimit(nil)
             
@@ -27,7 +27,7 @@ struct OnboardingPage3View: View {
                 .padding(.trailing, 20)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineLimit(nil)
-            Spacer()
+            
             
             VStack(spacing: 20) {
                 TabView(selection: $carouselIndex) {
@@ -40,6 +40,7 @@ struct OnboardingPage3View: View {
                             Image(carouselImages[index])
                                 .resizable()
                                 .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.medium))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .padding(.horizontal, 4)
@@ -47,7 +48,7 @@ struct OnboardingPage3View: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 320)
+                .frame(height: 380)
                 
                 // Custom Page Indicators
                 HStack(spacing: 8) {

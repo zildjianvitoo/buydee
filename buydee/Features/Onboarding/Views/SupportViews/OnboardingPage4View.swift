@@ -19,7 +19,7 @@ struct OnboardingPage4View: View {
                 Text("Before we go,")
                     .font(.buydeeLargeTitle)
                     .foregroundStyle(Color.buydee.primaryText)
-                    .padding(.top, 20)
+                    .padding(.top, 36)
                     .padding(.horizontal, 32)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -28,7 +28,7 @@ struct OnboardingPage4View: View {
                     .resizable()
                     .scaledToFit()
                     .frame(height: 250)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.25 + 30)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.25 + 50)
                 
                 
                 VStack(spacing: 0) {
