@@ -10,7 +10,8 @@ struct OnboardingPage4View: View {
     
     @State private var isKeyboardVisible: Bool = false
     
-    // MARK: - Body    var body: some View {
+    // MARK: - Body
+    var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
                 Color.buydee.cardBackground.ignoresSafeArea()
