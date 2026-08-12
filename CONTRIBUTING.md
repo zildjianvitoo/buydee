@@ -209,6 +209,12 @@ feat(chat): implement AI reflective conversation flow
 - Services: `GeminiService.swift`
 - Extensions: `Date+Extensions.swift`
 
+### UI & Accessibility (HIG Standards)
+
+- **Dynamic Type**: Selalu gunakan standard text styles (`.font(.title)`, `.font(.body)`, dll) daripada hardcoded font size (`.font(.system(size: 16))`). Ini memastikan text bisa membesar/mengecil sesuai setting accessibility user dan mematuhi Apple Human Interface Guidelines (HIG).
+- **Colors**: Gunakan warna dari `Color+Extensions.swift` atau Semantic Colors bawaan iOS (seperti `.secondary`, `.tertiary`).
+- **Touch Targets**: Pastikan button dan interactive elements memiliki minimum tap area 44x44 pt.
+
 ### Architecture Rules
 
 - **Views** hanya handle UI rendering — logic di ViewModel

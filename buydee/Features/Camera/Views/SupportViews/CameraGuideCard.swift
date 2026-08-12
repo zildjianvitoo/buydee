@@ -32,7 +32,7 @@ struct CameraGuideCard: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.roundedRectangle(radius: 17))
             .controlSize(.large)
-            .tint(Color.buydee.cameraAction)
+            .tint(Color.buydee.primaryButton)
             .accessibilityHint("Dismisses the camera guide")
         }
         .padding(.horizontal, 28)

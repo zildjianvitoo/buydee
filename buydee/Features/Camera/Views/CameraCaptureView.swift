@@ -286,7 +286,7 @@ struct CameraCaptureView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .tint(Color.buydee.cameraAction)
+                .tint(Color.buydee.primaryButton)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 44)
             } else {
@@ -300,7 +300,7 @@ struct CameraCaptureView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-                    .tint(Color.buydee.cameraAction)
+                    .tint(Color.buydee.primaryButton)
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, 24)
