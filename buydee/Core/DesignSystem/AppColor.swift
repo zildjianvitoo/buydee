@@ -32,16 +32,15 @@ extension Color {
 }
 struct BuydeeColors {
 
-    let background = Color(hex: "#D4DB81")
+    let background = Color(hex: "#E7E7D0")
 
     let primaryButton = Color(hex: "#54581A")
-    let primaryText = Color(hex: "#523602")
+    let primaryText = Color(hex: "#332B20")
     let secondaryText = Color.secondary
 
     let linkText = Color(hex: "#1E2691")
-    let primaryIcon = Color(hex: "#C75555")
 
     let cardBackground = Color.white
-    let canvasBackground = Color(hex: "#F5F2DF")
+    let canvasBackground = Color(hex: "#FCF8F1")
     let secondaryBackground = Color(hex: "#F5F5F5") // Added fallback in case it's missing
 }

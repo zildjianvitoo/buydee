@@ -14,12 +14,19 @@ struct OnboardingPage1View: View {
     // MARK: - Body
     var body: some View {
         VStack {
-                Text("Hi, there!\nI’ll be your personal shopping buddy.")
-                    .font(.buydeeLargeTitle)
-                    .foregroundStyle(Color.buydee.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 32)
-                    .padding(.top, 36)
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Tempted to buy")
+                        .font(.buydeeLargeTitle)
+                        .foregroundStyle(Color.buydee.primaryText)
+
+                    Text("Bring it here before you checked out. I’ll help you pause, reflect, and decide if it’s really worth it.  ")
+                        .font(.buydeeBody)
+                        .foregroundStyle(Color.buydee.primaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 32)
+                .padding(.top, 36)
+                .padding(.bottom, 30)
                 Spacer()
                 
                 ZStack {
@@ -29,7 +36,7 @@ struct OnboardingPage1View: View {
                 Spacer()
                 
                 Button(action: action) {
-                    Text("Bring me along")
+                    Text("Show me how")
                         .font(.buydeeHeadline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -42,7 +49,7 @@ struct OnboardingPage1View: View {
 
         }
         .background(
-            Image("BG-onboarding-1")
+            Image("bg-onboarding-1")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()

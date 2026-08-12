@@ -8,7 +8,7 @@ struct OnboardingPage3View: View {
     var action: () -> Void
     @State private var carouselIndex = 0
     
-    private let carouselTitles = ["Capture it", "Share it", "Attach it"]
+   
     private let carouselImages = ["onboarding-3-1", "onboarding-3-2", "onboarding-3-3"]
 
     // MARK: - Body
@@ -33,9 +33,7 @@ struct OnboardingPage3View: View {
                 TabView(selection: $carouselIndex) {
                     ForEach(0..<3, id: \.self) { index in
                         VStack(alignment: .leading, spacing: 16) {
-                            Text(carouselTitles[index])
-                                .font(.buydeeHeadline)
-                                .foregroundStyle(Color.buydee.primaryText)
+                           
                             
                             Image(carouselImages[index])
                                 .resizable()
