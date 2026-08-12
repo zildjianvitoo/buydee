@@ -7,12 +7,14 @@ import PhotosUI
 import SwiftUI
 
 struct CameraCaptureView: View {
+    // MARK: - Properties
     @Environment(\.openURL) private var openURL
     @State private var viewModel = CameraCaptureViewModel()
 
     let onDismiss: () -> Void
     let onImageCaptured: (UIImage) -> Void
-
+    
+    // MARK: - Initialization
     init(
         onDismiss: @escaping () -> Void,
         onImageCaptured: @escaping (UIImage) -> Void = { _ in }
@@ -20,7 +22,8 @@ struct CameraCaptureView: View {
         self.onDismiss = onDismiss
         self.onImageCaptured = onImageCaptured
     }
-
+    
+    // MARK: - Body
     var body: some View {
         GeometryReader { proxy in
             ZStack {
@@ -56,7 +59,8 @@ struct CameraCaptureView: View {
             Text(viewModel.flashErrorMessage ?? "")
         }
     }
-
+    
+    // MARK: - Support Views
     @ViewBuilder
     private func cameraBackground(in proxy: GeometryProxy) -> some View {
         if let capturedImage = viewModel.capturedImage {
@@ -310,7 +314,8 @@ struct CameraCaptureView: View {
         .frame(width: proxy.size.width, height: proxy.size.height)
         .foregroundStyle(.white)
     }
-
+    
+    // MARK: - Private Methods
     private func usePhoto(_ image: UIImage) {
         onImageCaptured(image)
         onDismiss()
@@ -339,7 +344,7 @@ struct CameraCaptureView: View {
 
     private func cameraControlLabel(
         systemImage: String,
-        iconSize: CGFloat = 19,
+        iconSize: CGFloat = 19, // Retained for backward compatibility in function signature, but overridden by Dynamic Type
         foregroundColor: Color = Color(uiColor: .darkGray)
     ) -> some View {
         ZStack {
@@ -347,7 +352,7 @@ struct CameraCaptureView: View {
                 .fill(.white)
 
             Image(systemName: systemImage)
-                .font(.system(size: iconSize, weight: .semibold))
+                .font(.headline) // Fixed: Using Dynamic Type instead of hardcoded .system(size:)
                 .foregroundStyle(foregroundColor)
         }
         .frame(width: 40, height: 40)

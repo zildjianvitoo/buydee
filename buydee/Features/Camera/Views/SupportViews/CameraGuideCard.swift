@@ -6,8 +6,10 @@
 import SwiftUI
 
 struct CameraGuideCard: View {
+    // MARK: - Properties
     let action: () -> Void
-
+    
+    // MARK: - Body
     var body: some View {
         VStack(spacing: 18) {
             Image("CameraGuideIllustration")
@@ -18,14 +20,14 @@ struct CameraGuideCard: View {
                 .accessibilityHidden(true)
 
             Text("Take a clear photo of the item you’re thinking about buying so we can help guide your reflection.")
-                .font(.body)
+                .font(.buydeeBody)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(Color.primary)
+                .foregroundColor(Color.buydee.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
 
             Button(action: action) {
                 Text("Got It")
-                    .font(.headline)
+                    .font(.buydeeHeadline)
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
             }

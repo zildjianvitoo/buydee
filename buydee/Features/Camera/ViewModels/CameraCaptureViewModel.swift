@@ -12,6 +12,7 @@ import UIKit
 @MainActor
 @Observable
 final class CameraCaptureViewModel {
+    // MARK: - Enums
     enum CapturedImageSource: Equatable {
         case camera
         case photoLibrary
@@ -23,7 +24,8 @@ final class CameraCaptureViewModel {
         case permissionDenied
         case unavailable(message: String)
     }
-
+    
+    // MARK: - Properties
     var status: CameraStatus = .loading
     var capturedImage: UIImage?
     var capturedImageSource: CapturedImageSource?
@@ -45,14 +47,16 @@ final class CameraCaptureViewModel {
     var session: AVCaptureSession {
         cameraService.session
     }
-
+    
+    // MARK: - Initialization
     init() {
         let userDefaults = UserDefaults.standard
         cameraService = CameraService()
         self.userDefaults = userDefaults
         showsGuide = !userDefaults.bool(forKey: cameraGuideKey)
     }
-
+    
+    // MARK: - Methods
     func startCamera() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:

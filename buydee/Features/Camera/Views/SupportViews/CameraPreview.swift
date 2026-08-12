@@ -7,8 +7,10 @@ import AVFoundation
 import SwiftUI
 
 struct CameraPreview: UIViewRepresentable {
+    // MARK: - Properties
     let session: AVCaptureSession
-
+    
+    // MARK: - UIViewRepresentable
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
         view.previewLayer.session = session
@@ -22,10 +24,12 @@ struct CameraPreview: UIViewRepresentable {
 }
 
 final class PreviewView: UIView {
+    // MARK: - Overrides
     override class var layerClass: AnyClass {
         AVCaptureVideoPreviewLayer.self
     }
-
+    
+    // MARK: - Properties
     var previewLayer: AVCaptureVideoPreviewLayer {
         guard let previewLayer = layer as? AVCaptureVideoPreviewLayer else {
             fatalError("PreviewView must use AVCaptureVideoPreviewLayer")
