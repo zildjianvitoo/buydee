@@ -59,12 +59,12 @@ struct OnboardingPage2View: View {
                 VStack {
                     Button(action: action) {
                         Text("Show Me")
-                            .font(Font.buydeeHeadline)
-                            .foregroundColor(.white)
+                            .font(.buydeeHeadline)
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, minHeight: 48)
                             .background(Color.buydee.primaryButton)
                             .clipShape(
-                                RoundedRectangle(cornerRadius: 16)
+                                RoundedRectangle(cornerRadius: BuydeeRadius.small)
                             )
                     }
                 }
@@ -74,6 +74,7 @@ struct OnboardingPage2View: View {
         }
     }
 
+    // MARK: - Private Methods
     func iconCircle(icon: String) -> some View {
         ZStack {
             Circle()
@@ -82,7 +83,7 @@ struct OnboardingPage2View: View {
 
             Image(systemName: icon)
                 .font(.system(size: 30))
-                .foregroundColor(Color.buydee.primaryText)
+                .foregroundStyle(Color.buydee.primaryText)
         }
     }
 }

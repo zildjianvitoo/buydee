@@ -34,12 +34,12 @@ struct OnboardingPage1View: View {
                 
                 Button(action: action) {
                     Text("Bring me along")
-                        .font(Font.buydeeHeadline)
-                        .foregroundColor(.white)
+                        .font(.buydeeHeadline)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity, minHeight: 48)
                         .background(Color.buydee.primaryButton)
                         .clipShape(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: BuydeeRadius.small)
                         )
                 }
                 .padding(.horizontal, 50)
