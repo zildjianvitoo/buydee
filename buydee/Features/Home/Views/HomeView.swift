@@ -15,7 +15,7 @@ struct HomeView: View {
 
     // MARK: - Initialization
     init(
-        viewModel: HomeViewModel = HomeViewModel(),
+        viewModel: HomeViewModel,
         editGoalAction: @escaping () -> Void = {},
         newCheckAction: @escaping () -> Void = {}
     ) {
@@ -33,6 +33,9 @@ struct HomeView: View {
                 SavingsSummaryView(
                     savedAmount: viewModel.formattedSavedAmount,
                     goalMessage: viewModel.goalMessage,
+                    isGoalMessageLoading: viewModel.isGoalMessageLoading,
+                    canRetryGoalMessage: viewModel.canRetryGoalMessage,
+                    retryGoalMessageAction: viewModel.retryGoalMessage,
                     editGoalAction: presentEditGoal
                 )
                 .position(
@@ -101,5 +104,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(viewModel: HomeViewModel())
 }

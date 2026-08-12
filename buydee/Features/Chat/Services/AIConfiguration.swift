@@ -19,6 +19,16 @@ struct AIConfiguration: Sendable {
         timeout: 90
     )
 
+    static let goalMessage = AIConfiguration(
+        endpoint: openRouterEndpoint,
+        model: "openai/gpt-5.6-luna",
+        maximumHistoryCount: 0,
+        maximumOutputTokens: 256,
+        reasoningEffort: .low,
+        excludesReasoningFromResponse: true,
+        timeout: 30
+    )
+
     private static let openRouterEndpoint: URL = {
         guard let endpoint = URL(string: "https://openrouter.ai/api/v1/chat/completions") else {
             fatalError("The bundled OpenRouter endpoint is invalid.")
