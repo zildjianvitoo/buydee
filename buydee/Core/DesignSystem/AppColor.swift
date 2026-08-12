@@ -1,13 +1,10 @@
 //
-//  Color+Extensions.swift
+//  AppColor.swift
 //  buydee
 //
-
 import SwiftUI
-
 extension Color {
     static let buydee = BuydeeColors()
-    
     /// Initializes a Color from a hex string (e.g., "#B8BDE9" or "B8BDE9")
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -15,11 +12,11 @@ extension Color {
         Scanner(string: hex).scanHexInt64(&int)
         let a, r, g, b: UInt64
         switch hex.count {
-        case 3: // RGB (12-bit)
+        case 3:
             (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
+        case 6:
             (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
+        case 8:
             (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
         default:
             (a, r, g, b) = (255, 0, 0, 0)
@@ -33,20 +30,15 @@ extension Color {
         )
     }
 }
-
 struct BuydeeColors {
     /// Background color for onboarding (pistachio green)
     let background = Color(hex: "#D4DB81")
-    
-    /// Accent color for buttons and primary text (dark olive/brown)
-    let primaryButton = Color(hex: "#4B5320")
-    
-    /// Text color for dark elements
-    let primaryText = Color(hex: "#4B5320")
-    
+    /// Accent color for buttons (dark olive)
+    let primaryButton = Color(hex: "#54581A")
+    /// Text color for dark elements (dark brown)
+    let primaryText = Color(hex: "#523602")
     /// Text color for descriptions
     let secondaryText = Color.secondary
-    
     /// Card background color
     let cardBackground = Color.white
 }
