@@ -65,7 +65,7 @@ struct HomeView: View {
                 )
             }
         }
-        .background(Color.buydee.cardBackground)
+        .background(Color.buydee.canvasBackground)
         .sheet(isPresented: $isEditGoalPresented) {
             EditGoalSheet(
                 goalText: viewModel.goalDescription ?? "",
@@ -86,10 +86,10 @@ struct HomeView: View {
     // MARK: - Private Methods
     private func background(in geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
-            Color.buydee.cardBackground
+            Color.buydee.canvasBackground
                 .frame(height: geometry.size.height * 0.55)
 
-            Color.buydee.secondaryBackground
+            Color.buydee.background
         }
         .ignoresSafeArea()
     }

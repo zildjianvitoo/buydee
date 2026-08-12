@@ -8,7 +8,10 @@
 import SwiftUI
 
 struct OnboardingPage1View: View {
+    // MARK: - Properties
     var action: () -> Void
+
+    // MARK: - Body
     var body: some View {
         ZStack{
             Image("BG-onboarding-1")

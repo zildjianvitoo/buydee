@@ -39,7 +39,9 @@ struct BuydeeColors {
     let secondaryText = Color.secondary
 
     let linkText = Color(hex: "#1E2691")
+    let primaryIcon = Color(hex: "#C75555")
 
     let cardBackground = Color.white
+    let canvasBackground = Color(hex: "#F5F2DF")
     let secondaryBackground = Color(hex: "#F5F5F5") // Added fallback in case it's missing
 }

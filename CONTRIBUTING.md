@@ -211,8 +211,12 @@ feat(chat): implement AI reflective conversation flow
 
 ### UI & Accessibility (HIG Standards)
 
-- **Dynamic Type**: Selalu gunakan standard text styles (`.font(.title)`, `.font(.body)`, dll) daripada hardcoded font size (`.font(.system(size: 16))`). Ini memastikan text bisa membesar/mengecil sesuai setting accessibility user dan mematuhi Apple Human Interface Guidelines (HIG).
-- **Colors**: Gunakan warna dari `Color+Extensions.swift` atau Semantic Colors bawaan iOS (seperti `.secondary`, `.tertiary`).
+- **Dynamic Type**: Selalu gunakan font kustom kita dari `AppFont.swift` (contoh: `.font(.buydeeHeadline)`, `.font(.buydeeBody)`). Dilarang menggunakan font statis `.font(.system(size:))` atau standar bawaan (`.font(.title)`) agar tipografi aplikasi konsisten dengan Design System.
+- **Colors**: Wajib menggunakan palet warna dari `AppColor.swift` (contoh: `Color.buydee.primaryText`, `Color.buydee.primaryButton`). Dilarang menaruh *hex code* atau *RGB color* secara manual di dalam View.
+- **Corner Radius**: Gunakan `BuydeeRadius` (contoh: `BuydeeRadius.small`, `BuydeeRadius.medium`) untuk menjaga konsistensi kebulatan elemen.
+- **Modern SwiftUI API**: Hindari fungsi yang sudah berstatus *deprecated*. 
+  - Gunakan `.foregroundStyle(...)` daripada `.foregroundColor(...)`.
+  - Gunakan `.clipShape(RoundedRectangle(cornerRadius: ...))` daripada `.cornerRadius(...)`.
 - **Touch Targets**: Pastikan button dan interactive elements memiliki minimum tap area 44x44 pt.
 
 ### Architecture Rules

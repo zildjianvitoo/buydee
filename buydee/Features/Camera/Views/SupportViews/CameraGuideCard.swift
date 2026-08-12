@@ -22,7 +22,7 @@ struct CameraGuideCard: View {
             Text("Take a clear photo of the item you’re thinking about buying so we can help guide your reflection.")
                 .font(.buydeeBody)
                 .multilineTextAlignment(.center)
-                .foregroundColor(Color.buydee.primaryText)
+                .foregroundStyle(Color.buydee.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
 
             Button(action: action) {
