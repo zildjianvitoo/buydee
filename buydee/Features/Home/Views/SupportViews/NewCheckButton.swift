@@ -19,12 +19,7 @@ struct NewCheckButton: View {
                 .padding(.vertical, 16)
                 .background(Color.buydee.primaryButton)
                 .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
-                .shadow(
-                    color: Color.black.opacity(0.22),
-                    radius: 8,
-                    x: 0,
-                    y: 4
-                )
+                
         }
         .buttonStyle(.plain)
         .accessibilityHint("Starts a new purchase reflection")
