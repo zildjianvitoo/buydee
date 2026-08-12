@@ -7,6 +7,9 @@ struct OnboardingPage3View: View {
     // MARK: - Properties
     var action: () -> Void
     @State private var carouselIndex = 0
+    
+    private let carouselTitles = ["Capture it", "Share it", "Attach it"]
+    private let carouselImages = ["onboarding-3-1", "onboarding-3-2", "onboarding-3-3"]
 
     // MARK: - Body
     var body: some View {
@@ -26,18 +29,25 @@ struct OnboardingPage3View: View {
                 .lineLimit(nil)
             Spacer()
             
-            VStack(spacing: 32) {
+            VStack(spacing: 20) {
                 TabView(selection: $carouselIndex) {
                     ForEach(0..<3, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: BuydeeRadius.medium)
-                            .fill(Color.buydee.background)
-                            .frame(maxWidth: .infinity, maxHeight: 300)
-                            .padding(.horizontal, 8)
-                            .tag(index)
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text(carouselTitles[index])
+                                .font(.buydeeHeadline)
+                                .foregroundStyle(Color.buydee.primaryText)
+                            
+                            Image(carouselImages[index])
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                        .padding(.horizontal, 4)
+                        .tag(index)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 300)
+                .frame(height: 320)
                 
                 // Custom Page Indicators
                 HStack(spacing: 8) {
