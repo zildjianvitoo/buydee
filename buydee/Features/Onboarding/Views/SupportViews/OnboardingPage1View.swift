@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct OnboardingPage1View: View {
+    // MARK: - Properties
     var action: () -> Void
+
+    // MARK: - Body
     var body: some View {
         VStack {
             Text("Hi, There!\nI’ll be your personal shopping buddy.")
-                .font(Font.largeTitle.bold())
+                .font(.buydeeLargeTitle)
                 .foregroundStyle(Color(red: 82 / 255, green: 54 / 255, blue: 2 / 255))
 
             ZStack {
@@ -26,13 +29,12 @@ struct OnboardingPage1View: View {
 
             Button(action: action) {
                 Text("Bring me along")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .font(.buydeeHeadline)
+                    .foregroundStyle(.white)
                     .frame(width:250, height: 48)
                     .background(Color(red: 84/255, green: 88/255, blue: 26/255))
                     .clipShape(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: BuydeeRadius.small)
                     )
             }
             .padding(.horizontal, 50)

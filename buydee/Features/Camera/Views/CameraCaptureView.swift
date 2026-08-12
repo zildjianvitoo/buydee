@@ -208,7 +208,7 @@ struct CameraCaptureView: View {
                 Image(systemName: "lightbulb.fill")
                     .imageScale(.small)
             }
-            .font(.caption)
+            .font(.buydeeCaption1)
             .foregroundStyle(.white)
             .frame(width: 68, height: 24)
             .background {
@@ -228,7 +228,7 @@ struct CameraCaptureView: View {
             .zIndex(1)
 
             Text("Keep the item clearly visible in the frame.")
-                .font(.caption)
+                .font(.buydeeCaption1)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white)
                 .lineLimit(1)
@@ -285,7 +285,7 @@ struct CameraCaptureView: View {
                     usePhoto(image)
                 } label: {
                     Label("Use Photo", systemImage: "checkmark")
-                        .font(.headline)
+                        .font(.buydeeHeadline)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -352,7 +352,7 @@ struct CameraCaptureView: View {
                 .fill(.white)
 
             Image(systemName: systemImage)
-                .font(.headline) // Fixed: Using Dynamic Type instead of hardcoded .system(size:)
+                .font(.buydeeHeadline) // Fixed: Using Dynamic Type from Design System
                 .foregroundStyle(foregroundColor)
         }
         .frame(width: 40, height: 40)

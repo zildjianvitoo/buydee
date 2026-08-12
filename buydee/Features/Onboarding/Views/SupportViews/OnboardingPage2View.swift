@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct OnboardingPage2View: View {
+    // MARK: - Properties
     var action: () -> Void
+
+    // MARK: - Body
     var body: some View {
         VStack {
             Text("Let's take another look before you buy!")
-                .font(.largeTitle.bold())
+                .font(.buydeeLargeTitle)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 24)
                 .foregroundStyle(Color(red: 82 / 255, green: 54 / 255, blue: 2 / 255))
@@ -51,13 +54,12 @@ struct OnboardingPage2View: View {
 
             Button(action: action) {
                 Text("Show Me")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .font(.buydeeHeadline)
+                    .foregroundStyle(.white)
                     .frame(width:250, height: 48)
                     .background(Color(Color(red: 84/255, green: 88/255, blue: 26/255)))
                     .clipShape(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: BuydeeRadius.small)
                     )
             }
             .padding(.horizontal, 50)
@@ -67,6 +69,7 @@ struct OnboardingPage2View: View {
     }
 
 
+    // MARK: - Private Methods
     func iconCircle(icon: String) -> some View {
         ZStack {
             Circle()
@@ -75,7 +78,7 @@ struct OnboardingPage2View: View {
 
             Image(systemName: icon)
                 .font(.system(size: 30))
-                .foregroundColor(Color(red: 82 / 255, green: 54 / 255, blue: 2 / 255))
+                .foregroundStyle(Color(red: 82 / 255, green: 54 / 255, blue: 2 / 255))
         }
     }
 }
