@@ -14,21 +14,20 @@ struct OnboardingView: View {
             })
             .tag(0)
             
-            OnboardingPage2View(action: {
-                viewModel.nextPage()
-            })
-            .tag(1)
+//            OnboardingPage2View(action: {
+//                viewModel.nextPage()
+//            })
+//            .tag(1)
             
             OnboardingPage3View(action: {
                 viewModel.nextPage()
             })
-            
-            .tag(2)
+            .tag(1)
+        
             OnboardingPage4View(viewModel: viewModel, action: {
                 viewModel.completeOnboarding()
             })
-            
-            .tag(3)
+            .tag(2)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .animation(.easeInOut, value: viewModel.currentPage)
