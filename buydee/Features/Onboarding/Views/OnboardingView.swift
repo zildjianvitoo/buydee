@@ -9,8 +9,9 @@ struct OnboardingView: View {
     @State private var viewModel = OnboardingViewModel()
     
     var body: some View {
-        TabView(selection: $viewModel.currentPage) {
-            
+        ZStack {
+            switch viewModel.currentPage {
+            case 0:
             // Placeholder for Page 1
             VStack {
                 Text("Page 1 (Placeholder)")
@@ -18,8 +19,8 @@ struct OnboardingView: View {
                 Button("Next") { viewModel.nextPage() }
                     .padding()
             }
-            .tag(0)
-            
+
+            case 1:
             // Placeholder for Page 2
             VStack {
                 Text("Page 2 (Placeholder)")
@@ -27,22 +28,22 @@ struct OnboardingView: View {
                 Button("Next") { viewModel.nextPage() }
                     .padding()
             }
-            .tag(1)
-            
+
+            case 2:
             // Page 3
             OnboardingPage3View(action: {
                 viewModel.nextPage()
             })
-            .tag(2)
-            
+
+            default:
             // Page 4
             OnboardingPage4View(viewModel: viewModel, action: {
                 viewModel.completeOnboarding()
             })
-            .tag(3)
-            
+            }
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        .id(viewModel.currentPage)
+        .transition(.opacity)
         .animation(.easeInOut, value: viewModel.currentPage)
         .ignoresSafeArea()
     }
