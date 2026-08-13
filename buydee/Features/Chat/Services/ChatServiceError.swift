@@ -7,7 +7,7 @@ enum ChatServiceError: LocalizedError {
     case emptyResponse
 
     var errorDescription: String? {
-        message(in: .deviceDefault)
+        message(in: .primaryDefault)
     }
 
     func message(in language: ChatLanguage) -> String {
