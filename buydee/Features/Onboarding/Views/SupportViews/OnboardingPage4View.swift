@@ -55,7 +55,10 @@ struct OnboardingPage4View: View {
                                         GoalSelectionRow(
                                             goal: goal,
                                             isSelected: viewModel.selectedGoal == goal,
-                                            customText: $viewModel.customGoalText,
+                                            customText: Binding(
+                                                get: { viewModel.customGoalTexts[goal] ?? "" },
+                                                set: { viewModel.customGoalTexts[goal] = $0 }
+                                            ),
                                             isKeyboardVisible: $isKeyboardVisible
                                         ) {
                                             isKeyboardVisible = false
@@ -73,7 +76,8 @@ struct OnboardingPage4View: View {
                             
                             Spacer(minLength: 0)
                             
-                            let isDisabled = viewModel.selectedGoal == nil || viewModel.customGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            let currentText = viewModel.selectedGoal.flatMap { viewModel.customGoalTexts[$0] } ?? ""
+                            let isDisabled = viewModel.selectedGoal == nil || currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                             
                             Button(action: action) {
                                 Text("Meet me")
