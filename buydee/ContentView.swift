@@ -81,13 +81,12 @@ struct ContentView: View {
 
     private func showCompletion(_ decision: PurchaseDecision) {
         let consideredPrice = chatViewModel.latestConsideredPriceInRupiah
-        latestConsideredPriceInRupiah = consideredPrice
 
         if decision == .bye, let consideredPrice {
             homeViewModel.addSavings(consideredPrice.value)
         }
 
-        path.append(.completion(decision))
+        path.append(.completion(decision, consideredPrice))
     }
 
     private func finishCheck() {
