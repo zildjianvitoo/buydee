@@ -140,7 +140,12 @@ struct GoalSelectionRow: View {
             }
             .buttonStyle(.plain)
             if isSelected {
-                TextField(goal == .others ? "Something else..." : "Name your goal...", text: $customText)
+                TextField(
+                    "",
+                    text: $customText,
+                    prompt: Text(goal == .others ? "Something else..." : "Name your goal...")
+                        .foregroundColor(Color.buydee.secondaryText)
+                )
                     .focused($isFocused)
                     .onChange(of: isFocused) { _, newValue in
                         isKeyboardVisible = newValue
