@@ -46,9 +46,8 @@ struct SavingsSummaryView: View {
 
                Button("Edit your goals here.", action: editGoalAction)
                    .font(.buydeeSubheadline)
-                   .foregroundStyle(Color.buydee.linkText)
+                   .foregroundStyle(Color.buydee.primaryButton)
                    .accessibilityHint("Opens your savings goal settings")
-                   .underline()
             }
         }
         .padding(.horizontal, 24)
