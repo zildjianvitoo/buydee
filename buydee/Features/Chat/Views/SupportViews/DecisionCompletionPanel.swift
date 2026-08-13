@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DecisionCompletionPanel: View {
     let decision: PurchaseDecision
+    let language: ChatLanguage
     let onDone: () -> Void
 
     var body: some View {
@@ -27,10 +28,15 @@ struct DecisionCompletionPanel: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         VStack(spacing: 8) {
-                            Text("All Set!")
+                            Text(
+                                language.text(
+                                    indonesian: "Selesai!",
+                                    english: "All Set!"
+                                )
+                            )
                                 .font(.buydeeChatCompletionTitle)
 
-                            Text(decision == .buy ? "You choose to buy." : "You choose not to buy.")
+                            Text(decisionText)
                                 .font(.buydeeHeadline)
                         }
                         .multilineTextAlignment(.center)
@@ -43,7 +49,12 @@ struct DecisionCompletionPanel: View {
                         Spacer(minLength: 24)
 
                         Button(action: onDone) {
-                            Text("I’m good to go!")
+                            Text(
+                                language.text(
+                                    indonesian: "Aku siap lanjut!",
+                                    english: "I’m good to go!"
+                                )
+                            )
                                 .font(.buydeeChatButton)
                                 .foregroundStyle(buttonForeground)
                                 .frame(maxWidth: .infinity)
@@ -52,7 +63,12 @@ struct DecisionCompletionPanel: View {
                         .tint(buttonBackground)
                         .controlSize(.large)
                         .frame(maxWidth: .infinity, minHeight: 44)
-                        .accessibilityHint("Continues to the saved decision screen")
+                        .accessibilityHint(
+                            language.text(
+                                indonesian: "Kembali ke beranda setelah keputusan disimpan",
+                                english: "Returns home after saving the decision"
+                            )
+                        )
                     }
                     .foregroundStyle(panelForeground)
                     .frame(width: contentWidth)
@@ -80,12 +96,27 @@ struct DecisionCompletionPanel: View {
     }
 
     private var completionMessage: String {
-        switch decision {
-        case .buy:
-            "You decided to buy, and that’s totally okay. A mindful purchase is the one you choose, not the one you rush. Enjoy!"
-        case .bye:
-            "You reflected and chose what truly matters. Small choices today bring you closer to your goal. Keep it going!"
+        switch (decision, language) {
+        case (.buy, .indonesian):
+            "Kamu memilih untuk membeli dan itu sepenuhnya keputusanmu. Pembelian yang lebih sadar datang dari pilihan yang kamu buat tanpa terburu-buru."
+        case (.bye, .indonesian):
+            "Kamu sudah berhenti sejenak dan memilih hal yang paling sesuai untukmu sekarang."
+        case (.buy, .english):
+            "You decided to buy, and that is entirely your choice. A mindful purchase comes from a decision you make without rushing."
+        case (.bye, .english):
+            "You paused to reflect and chose what fits you best right now."
         }
+    }
+
+    private var decisionText: String {
+        language.text(
+            indonesian: decision == .buy
+                ? "Kamu memilih untuk membeli."
+                : "Kamu memilih untuk tidak membeli.",
+            english: decision == .buy
+                ? "You choose to buy."
+                : "You choose not to buy."
+        )
     }
 
     private var panelBackground: Color {
@@ -110,13 +141,13 @@ struct DecisionCompletionPanel: View {
 }
 
 #Preview("BYE Completion Panel") {
-    DecisionCompletionPanel(decision: .bye, onDone: {})
+    DecisionCompletionPanel(decision: .bye, language: .english, onDone: {})
         .frame(width: 393, height: 500)
         .background(Color.buydee.chatBackground)
 }
 
 #Preview("BUY Completion Panel") {
-    DecisionCompletionPanel(decision: .buy, onDone: {})
+    DecisionCompletionPanel(decision: .buy, language: .english, onDone: {})
         .frame(width: 393, height: 500)
         .background(Color.buydee.chatBackground)
 }

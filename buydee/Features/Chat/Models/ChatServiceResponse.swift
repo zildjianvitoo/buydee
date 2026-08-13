@@ -6,6 +6,18 @@ struct ChatServiceResponse: Equatable, Sendable {
     let decisionMetadata: DecisionMetadata?
     let selectedDecision: PurchaseDecision?
 
+    init(
+        content: String,
+        updatedUserKnowledge: String?,
+        decisionMetadata: DecisionMetadata?,
+        selectedDecision: PurchaseDecision?
+    ) {
+        self.content = content
+        self.updatedUserKnowledge = updatedUserKnowledge
+        self.decisionMetadata = decisionMetadata
+        self.selectedDecision = selectedDecision
+    }
+
     init(rawContent: String) {
         var visibleContent = rawContent
         let knowledgePayload = Self.removeMarker(

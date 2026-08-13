@@ -7,6 +7,7 @@ struct ChatComposerView: View {
     let isProcessingImage: Bool
     let canSend: Bool
     let canAttachImage: Bool
+    let language: ChatLanguage
     @FocusState.Binding var isTextFieldFocused: Bool
     let openCamera: () -> Void
     let removeImage: () -> Void
@@ -31,23 +32,36 @@ struct ChatComposerView: View {
             }
 
             HStack(spacing: 8) {
-                TextField("Type a message…", text: $text, prompt: Text("Type Text...")
-                    .foregroundStyle(Color.buydee.primaryText.opacity(0.5)))
+                TextField(
+                    language.text(
+                        indonesian: "Tulis pesan",
+                        english: "Type a message"
+                    ),
+                    text: $text,
+                    prompt: Text(
+                        language.text(
+                            indonesian: "Tulis pesan...",
+                            english: "Type a message..."
+                        )
+                    )
+                    .foregroundStyle(Color.buydee.primaryText.opacity(0.5)),
+                    axis: .vertical
+                )
                     .font(.buydeeChatMessage)
                     .foregroundStyle(Color.buydee.primaryText)
-                    .lineLimit(1...4)
+                    .lineLimit(1...5)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
                     .background(Color.buydee.coolGray)
-                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .stroke(Color.buydee.oliveGreen, lineWidth: 1)
                     )
                     .focused($isTextFieldFocused)
                     .submitLabel(.send)
                     .onSubmit(sendIfPossible)
-                    .disabled(isGenerating || isProcessingImage)
+                    .disabled(!canAttachImage)
                     
 
                 Button {
@@ -84,6 +98,7 @@ struct ChatComposerView: View {
         isProcessingImage: false,
         canSend: true,
         canAttachImage: true,
+        language: .english,
         isTextFieldFocused: FocusState<Bool>().projectedValue,
         openCamera: {},
         removeImage: {},

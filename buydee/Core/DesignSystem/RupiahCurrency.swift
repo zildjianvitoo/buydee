@@ -1,26 +1,62 @@
 import Foundation
 
-enum RupiahCurrency {
+nonisolated enum RupiahCurrency {
     static func firstAmount(in text: String) -> RupiahAmount? {
         if let rangeAmount = firstRangeMidpoint(in: text) {
             return rangeAmount
         }
         guard !containsOpenEndedRange(in: text) else { return nil }
 
-        let pattern = #"(?i)\bRp\s*([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)?"#
-        guard let expression = try? NSRegularExpression(pattern: pattern),
-              let match = expression.firstMatch(
-                in: text,
-                range: NSRange(text.startIndex..., in: text)
-              ),
-              let numberRange = Range(match.range(at: 1), in: text) else {
-            return nil
+        let currencyPattern = #"(?i)\b(?:Rp|IDR)\s*([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)?"#
+        if let amount = firstAmount(in: text, matching: currencyPattern) {
+            return RupiahAmount(value: amount, isEstimated: false)
         }
 
-        let numberText = String(text[numberRange])
-        let unit = capturedString(at: 2, from: match, in: text).lowercased()
-        guard let amount = parsedAmount(numberText, unit: unit) else { return nil }
+        let shorthandPattern = #"(?i)\b([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)\b"#
+        guard let amount = firstAmount(in: text, matching: shorthandPattern) else {
+            let contextualPattern = #"(?i)\b(?:harga(?:nya)?|price|seharga)\s*(?:adalah|is|:)?\s*([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)?\b"#
+            if let contextualAmount = firstAmount(in: text, matching: contextualPattern) {
+                return RupiahAmount(value: contextualAmount, isEstimated: false)
+            }
+
+            let groupedNumberPattern = #"\b([0-9]{1,3}(?:\.[0-9]{3})+)\b"#
+            guard let groupedAmount = firstAmount(
+                in: text,
+                matching: groupedNumberPattern,
+                unitCaptureIndex: nil
+            ) else {
+                return nil
+            }
+            return RupiahAmount(value: groupedAmount, isEstimated: false)
+        }
         return RupiahAmount(value: amount, isEstimated: false)
+    }
+
+    static func expandingShorthand(in text: String) -> String {
+        let pattern = #"(?i)(?:\bRp\s*)?\b([0-9]+(?:[.,][0-9]+)*)\s*(juta|jt|ribu|rb|k)\b"#
+        guard let expression = try? NSRegularExpression(pattern: pattern),
+              !text.isEmpty else {
+            return text
+        }
+
+        var result = text
+        let matches = expression.matches(
+            in: text,
+            range: NSRange(text.startIndex..., in: text)
+        )
+        for match in matches.reversed() {
+            guard let fullRange = Range(match.range(at: 0), in: result),
+                  let numberRange = Range(match.range(at: 1), in: result),
+                  let unitRange = Range(match.range(at: 2), in: result),
+                  let amount = parsedAmount(
+                    String(result[numberRange]),
+                    unit: String(result[unitRange]).lowercased()
+                  ) else {
+                continue
+            }
+            result.replaceSubrange(fullRange, with: formatted(amount))
+        }
+        return result
     }
 
     static func formatted(_ amount: Int) -> String {
@@ -78,6 +114,27 @@ enum RupiahCurrency {
     ) -> String {
         guard let range = Range(match.range(at: index), in: text) else { return "" }
         return String(text[range])
+    }
+
+    private static func firstAmount(
+        in text: String,
+        matching pattern: String,
+        unitCaptureIndex: Int? = 2
+    ) -> Int? {
+        guard let expression = try? NSRegularExpression(pattern: pattern),
+              let match = expression.firstMatch(
+                in: text,
+                range: NSRange(text.startIndex..., in: text)
+              ),
+              let numberRange = Range(match.range(at: 1), in: text) else {
+            return nil
+        }
+
+        let numberText = String(text[numberRange])
+        let unit = unitCaptureIndex.map {
+            capturedString(at: $0, from: match, in: text).lowercased()
+        } ?? ""
+        return parsedAmount(numberText, unit: unit)
     }
 
     private static func parsedAmount(_ numberText: String, unit: String) -> Int? {

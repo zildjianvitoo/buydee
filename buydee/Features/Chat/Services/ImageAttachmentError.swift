@@ -5,11 +5,21 @@ enum ImageAttachmentError: LocalizedError {
     case encodingFailed
 
     var errorDescription: String? {
+        message(in: .deviceDefault)
+    }
+
+    func message(in language: ChatLanguage) -> String {
         switch self {
         case .invalidImage:
-            "Gambar tidak dapat dibaca. Pilih atau ambil gambar lain, ya."
+            language.text(
+                indonesian: "Gambar tidak dapat dibaca. Pilih atau ambil gambar lain, ya.",
+                english: "The image could not be read. Choose or take another image."
+            )
         case .encodingFailed:
-            "Gambar belum bisa diproses. Coba gunakan gambar lain."
+            language.text(
+                indonesian: "Gambar belum bisa diproses. Coba gunakan gambar lain.",
+                english: "The image could not be processed. Try another image."
+            )
         }
     }
 }

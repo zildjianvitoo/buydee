@@ -3,8 +3,14 @@ import SwiftUI
 
 struct DecisionSummary: Equatable, Sendable {
     let content: String
+    let choicePrompt: String?
     let consideredPriceInRupiah: RupiahAmount?
     let metadata: DecisionMetadata?
+
+    var displayMarkdown: String {
+        guard let choicePrompt, !choicePrompt.isEmpty else { return content }
+        return "\(content)\n\n\(choicePrompt)"
+    }
 
     init?(
         markdown: String,
@@ -13,8 +19,9 @@ struct DecisionSummary: Equatable, Sendable {
     ) {
         let normalizedMarkdown = markdown.replacing("\r\n", with: "\n")
         var contentLines: [String] = []
-        var hasChoicePrompt = false
+        var parsedChoicePrompt: String?
         var hasConfirmedMidpointMarker = false
+        var reachedProsOrConsSection = false
 
         for rawLine in normalizedMarkdown.components(separatedBy: "\n") {
             let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -26,13 +33,23 @@ struct DecisionSummary: Equatable, Sendable {
             }
             if normalizedLine.contains("**buy**"),
                normalizedLine.contains("**bye**") {
-                hasChoicePrompt = true
+                parsedChoicePrompt = line
                 continue
             }
-            contentLines.append(rawLine)
+            if Self.isProsOrConsLabel(line) {
+                reachedProsOrConsSection = true
+                continue
+            }
+            if reachedProsOrConsSection {
+                continue
+            }
+            if Self.isMarkdownHeading(line) {
+                continue
+            }
+            contentLines.append(Self.removingListMarker(from: rawLine))
         }
 
-        guard !requiresChoicePrompt || hasChoicePrompt else { return nil }
+        guard !requiresChoicePrompt || parsedChoicePrompt != nil else { return nil }
         let parsedContent = contentLines
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -47,13 +64,16 @@ struct DecisionSummary: Equatable, Sendable {
         }
 
         let metadataPrice: RupiahAmount?
-        if let originalPriceText = metadata?.originalPriceText {
+        if let priceInRupiah = metadata?.priceInRupiah, priceInRupiah > 0 {
+            metadataPrice = RupiahAmount(value: priceInRupiah, isEstimated: false)
+        } else if let originalPriceText = metadata?.originalPriceText {
             metadataPrice = RupiahCurrency.firstAmount(in: originalPriceText)
         } else {
             metadataPrice = nil
         }
 
-        content = parsedContent
+        content = RupiahCurrency.expandingShorthand(in: parsedContent)
+        choicePrompt = parsedChoicePrompt
         consideredPriceInRupiah = rangePrice
             ?? RupiahCurrency.firstAmount(in: parsedContent)
             ?? metadataPrice
@@ -76,6 +96,49 @@ struct DecisionSummary: Equatable, Sendable {
         return RupiahAmount(value: midpoint, isEstimated: true)
     }
 
+    private static func isProsOrConsLabel(_ line: String) -> Bool {
+        let normalized = line
+            .replacingOccurrences(of: "#", with: "")
+            .replacingOccurrences(of: "*", with: "")
+            .replacingOccurrences(of: "_", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: ":"))
+            .lowercased()
+        return [
+            "pros", "cons", "pros and cons", "pro dan kontra",
+            "kelebihan", "kekurangan", "alasan membeli",
+            "alasan tidak membeli",
+        ].contains(normalized)
+    }
+
+    private static func isMarkdownHeading(_ line: String) -> Bool {
+        let markerCount = line.prefix { $0 == "#" }.count
+        guard (1...6).contains(markerCount), markerCount < line.count else {
+            return false
+        }
+        let contentIndex = line.index(line.startIndex, offsetBy: markerCount)
+        return line[contentIndex].isWhitespace
+    }
+
+    private static func removingListMarker(from line: String) -> String {
+        let leadingWhitespace = line.prefix { $0.isWhitespace }
+        let content = line.dropFirst(leadingWhitespace.count)
+
+        for marker in ["- ", "* ", "+ "] where content.hasPrefix(marker) {
+            return String(content.dropFirst(marker.count))
+        }
+
+        guard let separator = content.firstIndex(where: { $0 == "." || $0 == ")" }) else {
+            return line
+        }
+        let possibleNumber = content[..<separator]
+        guard !possibleNumber.isEmpty, possibleNumber.allSatisfy(\.isNumber) else {
+            return line
+        }
+        let textStart = content.index(after: separator)
+        return String(content[textStart...]).trimmingCharacters(in: .whitespaces)
+    }
+
     private static let confirmedMidpointMarker = "<!-- BUYDEE_MIDPOINT_CONFIRMED -->"
 }
 
@@ -91,15 +154,15 @@ struct DecisionSummary: Equatable, Sendable {
             productName: "iPhone 17",
             productCategory: "Smartphone",
             originalPriceText: "Rp17 juta",
+            priceInRupiah: 17_000_000,
             contextSummary: "Ponsel sekarang rusak dan harga masih terasa berat.",
-            prosSummary: "Performa menarik dan akan sering dipakai.",
-            consSummary: "Harga bersaing dengan holiday fund.",
             relatedGoal: "Holiday fund"
         )
     ) {
         ChatSummaryCard(
             summary: summary,
             isEnabled: true,
+            language: .indonesian,
             onDecision: { _ in }
         )
         .padding(16)

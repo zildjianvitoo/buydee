@@ -3,11 +3,19 @@ import SwiftUI
 struct ChatTypingIndicator: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let messages = [
-        "Bentar ya, aku lagi bantu kamu nimbang-nimbang dulu…",
-        "Aku lagi bantu kamu lihat pertimbangannya biar lebih jelas…",
-        "Sebentar ya, aku lagi nyusun sudut pandangnya buat kamu…",
-        "Lagi aku pikirin bareng kamu, tunggu sebentar ya…",
+    let language: ChatLanguage
+
+    private static let indonesianMessages = [
+        "Bentar ya, aku lagi bantu kamu nimbang dulu",
+        "Aku lagi bantu kamu lihat pertimbangannya biar lebih jelas",
+        "Sebentar ya, aku lagi nyusun sudut pandangnya buat kamu",
+        "Lagi aku pikirin bareng kamu, tunggu sebentar ya",
+    ]
+    private static let englishMessages = [
+        "Give me a moment while I think this through with you",
+        "I am looking at the details with you",
+        "One moment while I connect the important points",
+        "Thinking it through with you, just a moment",
     ]
 
     var body: some View {
@@ -47,7 +55,12 @@ struct ChatTypingIndicator: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Buydee sedang membantu memikirkan jawaban")
+        .accessibilityLabel(
+            language.text(
+                indonesian: "Buydee sedang membantu memikirkan jawaban",
+                english: "Buydee is thinking through the response with you"
+            )
+        )
     }
 
     private func shimmerOffset(for width: Double, at date: Date) -> Double {
@@ -60,14 +73,17 @@ struct ChatTypingIndicator: View {
 
     private func message(at date: Date) -> String {
         let displayDuration = 3.5
+        let messages = language == .indonesian
+            ? Self.indonesianMessages
+            : Self.englishMessages
         let index = Int(date.timeIntervalSinceReferenceDate / displayDuration)
-            % Self.messages.count
-        return Self.messages[index]
+            % messages.count
+        return messages[index]
     }
 }
 
 #Preview {
-    ChatTypingIndicator()
+    ChatTypingIndicator(language: .indonesian)
         .padding()
         .background(Color.buydee.chatBackground)
 }

@@ -10,6 +10,8 @@ final class ChatViewModel {
     var isGenerating = false
     var errorMessage: String?
     private(set) var completedDecision: PurchaseDecision?
+    private(set) var conversationLanguage: ChatLanguage
+    private(set) var hasStoppedExploration = false
 
     @ObservationIgnored private let service: any ChatServicing
     @ObservationIgnored private let imageProcessor: ImageAttachmentProcessor
@@ -18,12 +20,15 @@ final class ChatViewModel {
     @ObservationIgnored private var decisionHistoryStore: (any DecisionHistoryStoring)?
     @ObservationIgnored private var userKnowledge = ""
     @ObservationIgnored private var decisionHistory: [PurchaseDecisionMemory] = []
+    @ObservationIgnored private var pendingUserKnowledge: String?
     @ObservationIgnored private var sessionID = UUID()
     @ObservationIgnored private var responseTask: Task<Void, Never>?
     @ObservationIgnored private var imageProcessingTask: Task<Void, Never>?
     @ObservationIgnored private var activeRequestID: UUID?
     @ObservationIgnored private var lastRequestedMessage: ChatMessage?
     @ObservationIgnored private var lastRequestHistory: [ChatMessage] = []
+    @ObservationIgnored private var lastRequestRequiresSummary = false
+    @ObservationIgnored private var didDetectLanguageFromUserText = false
     private(set) var isProcessingImage = false
 
     init(
@@ -34,6 +39,7 @@ final class ChatViewModel {
         self.service = service
         self.imageProcessor = imageProcessor
         self.userDefaults = userDefaults
+        conversationLanguage = .deviceDefault
     }
 
     convenience init() {
@@ -46,7 +52,10 @@ final class ChatViewModel {
         do {
             userKnowledge = try store.currentKnowledge()
         } catch {
-            errorMessage = Self.knowledgeLoadErrorMessage
+            errorMessage = localized(
+                indonesian: "Konteks dari chat sebelumnya belum berhasil dimuat. Chat ini tetap bisa dilanjutkan.",
+                english: "Context from earlier chats could not be loaded. You can still continue this chat."
+            )
         }
     }
 
@@ -56,7 +65,10 @@ final class ChatViewModel {
         do {
             decisionHistory = try store.recentDecisions(limit: Self.promptDecisionHistoryLimit)
         } catch {
-            errorMessage = Self.decisionHistoryLoadErrorMessage
+            errorMessage = localized(
+                indonesian: "Riwayat keputusan sebelumnya belum berhasil dimuat. Chat ini tetap bisa dilanjutkan.",
+                english: "Earlier decisions could not be loaded. You can still continue this chat."
+            )
         }
     }
 
@@ -64,10 +76,11 @@ final class ChatViewModel {
         (!cleanDraftText.isEmpty || draftImage != nil)
             && !isGenerating
             && !isProcessingImage
+            && !hasStoppedExploration
     }
 
     var canAttachImage: Bool {
-        !isGenerating && !isProcessingImage
+        !isGenerating && !isProcessingImage && !hasStoppedExploration
     }
 
     var canRetry: Bool {
@@ -78,13 +91,11 @@ final class ChatViewModel {
         completedRoundTripCount >= 2
             && !messages.contains { $0.decisionSummary != nil }
             && !isGenerating
+            && !hasStoppedExploration
     }
 
     var latestConsideredPriceInRupiah: RupiahAmount? {
-        messages.reversed().lazy
-            .compactMap(\.decisionSummary)
-            .compactMap(\.consideredPriceInRupiah)
-            .first
+        latestKnownPriceInRupiah()
     }
 
     func sendMessage() {
@@ -93,9 +104,13 @@ final class ChatViewModel {
         let text = cleanDraftText
         let imageData = draftImage?.jpegData
         guard imageData != nil || !Self.containsHTTPURL(in: text) else {
-            errorMessage = Self.unsupportedLinkMessage
+            errorMessage = localized(
+                indonesian: "Link produk belum bisa dianalisis. Kirim nama produk dan harganya, atau lampirkan gambar produk.",
+                english: "Product links cannot be analyzed yet. Send the product name and price, or attach a product image."
+            )
             return
         }
+        detectConversationLanguageIfNeeded(from: text)
 
         let latestMessage = ChatMessage(
             role: .user,
@@ -113,10 +128,13 @@ final class ChatViewModel {
     func requestEarlySummary() {
         guard canOfferEarlyDecision else { return }
 
-        let request = ChatMessage(role: .user, content: Self.earlySummaryRequest)
+        hasStoppedExploration = true
+        let request = ChatMessage(
+            role: .user,
+            content: conversationLanguage.earlySummaryRequest
+        )
         let history = messages
-        messages.append(request)
-        beginResponse(to: request, history: history)
+        beginResponse(to: request, history: history, requiresSummary: true)
     }
 
     @discardableResult
@@ -127,7 +145,10 @@ final class ChatViewModel {
             return false
         }
 
-        let latestMessage = ChatMessage(role: .user, content: decision.apiMessage)
+        let latestMessage = ChatMessage(
+            role: .user,
+            content: decision.apiMessage(in: conversationLanguage)
+        )
         let history = messages
         messages.append(latestMessage)
         beginResponse(to: latestMessage, history: history)
@@ -144,7 +165,11 @@ final class ChatViewModel {
 
     func retryLastResponse() {
         guard canRetry, let lastRequestedMessage else { return }
-        beginResponse(to: lastRequestedMessage, history: lastRequestHistory)
+        beginResponse(
+            to: lastRequestedMessage,
+            history: lastRequestHistory,
+            requiresSummary: lastRequestRequiresSummary
+        )
     }
 
     func cancelActiveRequest() {
@@ -178,7 +203,7 @@ final class ChatViewModel {
             } catch is CancellationError {
                 return
             } catch {
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = self.localizedImageErrorMessage(for: error)
             }
         }
     }
@@ -194,7 +219,12 @@ final class ChatViewModel {
         errorMessage = nil
         lastRequestedMessage = nil
         lastRequestHistory = []
+        lastRequestRequiresSummary = false
         completedDecision = nil
+        pendingUserKnowledge = nil
+        hasStoppedExploration = false
+        conversationLanguage = .deviceDefault
+        didDetectLanguageFromUserText = false
         sessionID = UUID()
     }
 
@@ -235,13 +265,18 @@ final class ChatViewModel {
         return completedRoundTrips
     }
 
-    private func beginResponse(to latestMessage: ChatMessage, history: [ChatMessage]) {
+    private func beginResponse(
+        to latestMessage: ChatMessage,
+        history: [ChatMessage],
+        requiresSummary: Bool = false
+    ) {
         guard !isGenerating else { return }
 
         let requestID = UUID()
         activeRequestID = requestID
         lastRequestedMessage = latestMessage
         lastRequestHistory = history
+        lastRequestRequiresSummary = requiresSummary
         errorMessage = nil
         isGenerating = true
 
@@ -256,28 +291,36 @@ final class ChatViewModel {
                     history: history,
                     goals: goals,
                     userKnowledge: self.userKnowledge,
-                    decisionHistory: self.decisionHistory
+                    decisionHistory: self.decisionHistory,
+                    language: self.conversationLanguage
                 )
                 try Task.checkCancellation()
                 guard self.activeRequestID == requestID else { return }
 
+                let contractResponse = requiresSummary
+                    ? self.enforcingSummaryContract(on: response)
+                    : response
+                let resolvedResponse = self.enrichingPriceMetadata(in: contractResponse)
                 self.messages.append(
                     ChatMessage(
                         role: .assistant,
-                        content: response.content,
-                        decisionMetadata: response.decisionMetadata,
-                        selectedDecision: response.selectedDecision
+                        content: resolvedResponse.content,
+                        decisionMetadata: resolvedResponse.decisionMetadata,
+                        selectedDecision: resolvedResponse.selectedDecision
                     )
                 )
-                self.persistUserKnowledge(response.updatedUserKnowledge)
-                self.handleEarlyDecision(from: response)
+                if let updatedUserKnowledge = resolvedResponse.updatedUserKnowledge {
+                    self.pendingUserKnowledge = updatedUserKnowledge
+                }
+                self.handleEarlyDecision(from: resolvedResponse)
                 self.lastRequestedMessage = nil
                 self.lastRequestHistory = []
+                self.lastRequestRequiresSummary = false
             } catch is CancellationError {
                 return
             } catch {
                 guard self.activeRequestID == requestID else { return }
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = self.localizedErrorMessage(for: error)
             }
         }
     }
@@ -289,14 +332,18 @@ final class ChatViewModel {
         isGenerating = false
     }
 
-    private func persistUserKnowledge(_ updatedKnowledge: String?) {
-        guard let updatedKnowledge else { return }
+    private func persistPendingUserKnowledge() {
+        guard let pendingUserKnowledge else { return }
 
         do {
-            try userKnowledgeStore?.replaceKnowledge(with: updatedKnowledge)
-            userKnowledge = updatedKnowledge
+            try userKnowledgeStore?.replaceKnowledge(with: pendingUserKnowledge)
+            userKnowledge = pendingUserKnowledge
+            self.pendingUserKnowledge = nil
         } catch {
-            errorMessage = Self.knowledgeSaveErrorMessage
+            errorMessage = localized(
+                indonesian: "Keputusanmu sudah tersimpan, tetapi konteks pentingnya belum berhasil disimpan.",
+                english: "Your decision was saved, but its important context could not be saved."
+            )
         }
     }
 
@@ -317,7 +364,10 @@ final class ChatViewModel {
             sessionID: sessionID,
             productName: Self.normalized(
                 metadata?.productName,
-                fallback: Self.unknownProductName,
+                fallback: localized(
+                    indonesian: "Produk dari sesi ini",
+                    english: "Product from this session"
+                ),
                 maximumLength: 100
             ),
             productCategory: Self.normalizedOptional(
@@ -339,16 +389,6 @@ final class ChatViewModel {
                 fallback: summary.content,
                 maximumLength: 240
             ),
-            prosSummary: Self.normalized(
-                metadata?.prosSummary,
-                fallback: "",
-                maximumLength: 200
-            ),
-            consSummary: Self.normalized(
-                metadata?.consSummary,
-                fallback: "",
-                maximumLength: 200
-            ),
             relatedGoal: Self.normalizedOptional(
                 metadata?.relatedGoal,
                 maximumLength: 120
@@ -361,8 +401,12 @@ final class ChatViewModel {
             decisionHistory.insert(memory, at: 0)
             decisionHistory = Array(decisionHistory.prefix(Self.promptDecisionHistoryLimit))
         } catch {
-            errorMessage = Self.decisionHistorySaveErrorMessage
+            errorMessage = localized(
+                indonesian: "Pilihanmu tetap diproses, tetapi detail keputusan ini belum berhasil disimpan.",
+                english: "Your choice was processed, but the decision details could not be saved."
+            )
         }
+        persistPendingUserKnowledge()
     }
 
     private func handleEarlyDecision(from response: ChatServiceResponse) {
@@ -378,6 +422,173 @@ final class ChatViewModel {
 
         persistDecision(summary, decision: selectedDecision)
         completedDecision = selectedDecision
+    }
+
+    private func detectConversationLanguageIfNeeded(from text: String) {
+        guard !didDetectLanguageFromUserText, !text.isEmpty else { return }
+        conversationLanguage = ChatLanguage.detected(
+            from: text,
+            fallback: conversationLanguage
+        )
+        didDetectLanguageFromUserText = true
+    }
+
+    private func enforcingSummaryContract(
+        on response: ChatServiceResponse
+    ) -> ChatServiceResponse {
+        if let metadata = response.decisionMetadata,
+           DecisionSummary(markdown: response.content, metadata: metadata) != nil {
+            return response
+        }
+
+        let summaryBody = Self.removingQuestions(from: response.content)
+        var visibleSummary = summaryBody.isEmpty
+            ? conversationLanguage.insufficientSummary
+            : summaryBody
+        var content = "\(visibleSummary)\n\n\(conversationLanguage.decisionQuestion)"
+        var metadata = metadataWithFallbackPrice(
+            response.decisionMetadata,
+            contextSummary: visibleSummary
+        )
+        if DecisionSummary(markdown: content, metadata: metadata) == nil {
+            visibleSummary = conversationLanguage.insufficientSummary
+            content = "\(visibleSummary)\n\n\(conversationLanguage.decisionQuestion)"
+            metadata = metadataWithFallbackPrice(
+                nil,
+                contextSummary: visibleSummary
+            )
+        }
+
+        return ChatServiceResponse(
+            content: content,
+            updatedUserKnowledge: response.updatedUserKnowledge,
+            decisionMetadata: metadata,
+            selectedDecision: response.selectedDecision
+        )
+    }
+
+    private static func removingQuestions(from content: String) -> String {
+        var keptSentences: [String] = []
+        var currentSentence = ""
+
+        for character in content {
+            currentSentence.append(character)
+
+            if character == "?" {
+                currentSentence = ""
+            } else if character == "." || character == "!" || character == "\n" {
+                let sentence = currentSentence
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !sentence.isEmpty {
+                    keptSentences.append(sentence)
+                }
+                currentSentence = ""
+            }
+        }
+
+        let remainder = currentSentence
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !remainder.isEmpty {
+            keptSentences.append(remainder)
+        }
+
+        return keptSentences
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func latestKnownPriceInRupiah() -> RupiahAmount? {
+        for message in messages.reversed() {
+            if let summaryPrice = message.decisionSummary?.consideredPriceInRupiah {
+                return summaryPrice
+            }
+            if let metadataPrice = message.decisionMetadata?.priceInRupiah,
+               metadataPrice > 0 {
+                return RupiahAmount(value: metadataPrice, isEstimated: false)
+            }
+            if let originalPriceText = message.decisionMetadata?.originalPriceText,
+               let parsedPrice = RupiahCurrency.firstAmount(in: originalPriceText) {
+                return parsedPrice
+            }
+            if let parsedPrice = RupiahCurrency.firstAmount(in: message.content) {
+                return parsedPrice
+            }
+        }
+        return nil
+    }
+
+    private func metadataWithFallbackPrice(
+        _ metadata: DecisionMetadata?,
+        contextSummary: String
+    ) -> DecisionMetadata {
+        let fallbackPrice = latestKnownPriceInRupiah()
+        return DecisionMetadata(
+            productName: metadata?.productName,
+            productCategory: metadata?.productCategory,
+            originalPriceText: metadata?.originalPriceText
+                ?? fallbackPrice.map { RupiahCurrency.formatted($0.value) },
+            priceInRupiah: metadata?.priceInRupiah ?? fallbackPrice?.value,
+            priceRangeLower: metadata?.priceRangeLower,
+            priceRangeUpper: metadata?.priceRangeUpper,
+            contextSummary: metadata?.contextSummary ?? Self.normalized(
+                contextSummary,
+                fallback: conversationLanguage.insufficientSummary,
+                maximumLength: 240
+            ),
+            relatedGoal: metadata?.relatedGoal
+        )
+    }
+
+    private func enrichingPriceMetadata(
+        in response: ChatServiceResponse
+    ) -> ChatServiceResponse {
+        guard let metadata = response.decisionMetadata else { return response }
+
+        let price = metadata.priceInRupiah.map {
+            RupiahAmount(value: $0, isEstimated: false)
+        }
+            ?? metadata.originalPriceText.flatMap(RupiahCurrency.firstAmount)
+            ?? RupiahCurrency.firstAmount(in: response.content)
+            ?? latestKnownPriceInRupiah()
+        guard let price else { return response }
+
+        let enrichedMetadata = DecisionMetadata(
+            productName: metadata.productName,
+            productCategory: metadata.productCategory,
+            originalPriceText: metadata.originalPriceText
+                ?? RupiahCurrency.formatted(price.value),
+            priceInRupiah: metadata.priceInRupiah ?? price.value,
+            priceRangeLower: metadata.priceRangeLower,
+            priceRangeUpper: metadata.priceRangeUpper,
+            contextSummary: metadata.contextSummary,
+            relatedGoal: metadata.relatedGoal
+        )
+        return ChatServiceResponse(
+            content: response.content,
+            updatedUserKnowledge: response.updatedUserKnowledge,
+            decisionMetadata: enrichedMetadata,
+            selectedDecision: response.selectedDecision
+        )
+    }
+
+    private func localizedErrorMessage(for error: Error) -> String {
+        guard let serviceError = error as? ChatServiceError else {
+            return error.localizedDescription
+        }
+
+        return serviceError.message(in: conversationLanguage)
+    }
+
+    private func localizedImageErrorMessage(for error: Error) -> String {
+        guard let imageError = error as? ImageAttachmentError else {
+            return error.localizedDescription
+        }
+
+        return imageError.message(in: conversationLanguage)
+    }
+
+    private func localized(indonesian: String, english: String) -> String {
+        conversationLanguage.text(indonesian: indonesian, english: english)
     }
 
     private static func normalized(
@@ -410,24 +621,5 @@ final class ChatViewModel {
         return (lower, upper)
     }
 
-    private static let unsupportedLinkMessage =
-        "Link produk belum bisa dianalisis. Kirim nama produk dan harganya, atau lampirkan gambar produk."
-
-    private static let knowledgeLoadErrorMessage =
-        "Konteks dari chat sebelumnya belum berhasil dimuat. Chat ini tetap bisa dilanjutkan."
-
-    private static let knowledgeSaveErrorMessage =
-        "Respons sudah diterima, tetapi konteks pentingnya belum berhasil disimpan."
-
-    private static let decisionHistoryLoadErrorMessage =
-        "Riwayat keputusan sebelumnya belum berhasil dimuat. Chat ini tetap bisa dilanjutkan."
-
-    private static let decisionHistorySaveErrorMessage =
-        "Pilihanmu tetap diproses, tetapi detail keputusan ini belum berhasil disimpan."
-
-    private static let unknownProductName = "Produk dari sesi ini"
     private static let promptDecisionHistoryLimit = 12
-
-    private static let earlySummaryRequest =
-        "Aku siap menentukan pilihan sekarang. Jika harga berupa rentang dan nilai tengahnya belum aku konfirmasi, tanyakan konfirmasinya dulu. Jika harganya sudah valid, rangkum secara natural dan singkat sesuai aturan Summary, lalu tawarkan BUY atau BYE secara netral."
 }

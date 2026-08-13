@@ -3,6 +3,7 @@ import SwiftUI
 struct ChatTranscriptView: View {
     let messages: [ChatMessage]
     let isGenerating: Bool
+    let language: ChatLanguage
     let dismissKeyboard: () -> Void
     let onDecision: (PurchaseDecision) -> Void
 
@@ -21,6 +22,7 @@ struct ChatTranscriptView: View {
                                     ChatSummaryCard(
                                         summary: decisionSummary,
                                         isEnabled: !isGenerating,
+                                        language: language,
                                         onDecision: onDecision
                                     )
                                     .id(message.id)
@@ -32,7 +34,7 @@ struct ChatTranscriptView: View {
                         }
 
                         if isGenerating {
-                            ChatTypingIndicator()
+                            ChatTypingIndicator(language: language)
                                 .id("chat-typing-indicator")
                         }
 
@@ -74,12 +76,20 @@ struct ChatTranscriptView: View {
                 if messages.isEmpty && !isGenerating {
                     ContentUnavailableView {
                         Label(
-                            "What are you considering?",
+                            language.text(
+                                indonesian: "Apa yang sedang kamu pertimbangkan?",
+                                english: "What are you considering?"
+                            ),
                             systemImage: "bubble.left.and.bubble.right"
                         )
                         .foregroundStyle(.black)
                     } description: {
-                        Text("Type a product and its price, or attach an image to begin.")
+                        Text(
+                            language.text(
+                                indonesian: "Tulis nama produk dan harganya, atau lampirkan gambar untuk mulai.",
+                                english: "Type a product and its price, or attach an image to begin."
+                            )
+                        )
                             .foregroundStyle(.black)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -88,8 +98,13 @@ struct ChatTranscriptView: View {
                 }
 
                 if showsScrollDownButton {
-                    Button("Scroll to latest message", systemImage: "chevron.down") {
-                        showsScrollDownButton = false
+                    Button(
+                        language.text(
+                            indonesian: "Scroll ke pesan terbaru",
+                            english: "Scroll to latest message"
+                        ),
+                        systemImage: "chevron.down"
+                    ) {
                         scrollToLatest(using: proxy)
                     }
                     .labelStyle(.iconOnly)
@@ -99,7 +114,12 @@ struct ChatTranscriptView: View {
                     .frame(width: 52, height: 52)
                     .padding(.trailing, 24)
                     .padding(.bottom, 24)
-                    .accessibilityHint("Moves to the newest message")
+                    .accessibilityHint(
+                        language.text(
+                            indonesian: "Berpindah ke pesan paling baru",
+                            english: "Moves to the newest message"
+                        )
+                    )
                     .transition(.opacity.combined(with: .scale))
                 }
             }
@@ -122,11 +142,15 @@ struct ChatTranscriptView: View {
     }
 
     private func scrollToLatest(using proxy: ScrollViewProxy) {
-        if reduceMotion {
-            proxy.scrollTo("chat-transcript-bottom", anchor: .bottom)
-        } else {
-            withAnimation(.easeOut) {
+        Task { @MainActor in
+            await Task.yield()
+
+            if reduceMotion {
                 proxy.scrollTo("chat-transcript-bottom", anchor: .bottom)
+            } else {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    proxy.scrollTo("chat-transcript-bottom", anchor: .bottom)
+                }
             }
         }
     }

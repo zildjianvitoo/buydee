@@ -12,6 +12,7 @@ struct ChatView: View {
         ChatTranscriptView(
             messages: viewModel.messages,
             isGenerating: viewModel.isGenerating,
+            language: viewModel.conversationLanguage,
             dismissKeyboard: dismissKeyboard,
             onDecision: chooseDecision
         )
@@ -22,12 +23,16 @@ struct ChatView: View {
                     ChatErrorBanner(
                         message: errorMessage,
                         canRetry: viewModel.canRetry,
+                        language: viewModel.conversationLanguage,
                         retry: viewModel.retryLastResponse
                     )
                 }
 
                 if viewModel.canOfferEarlyDecision && !viewModel.isGenerating {
-                    EarlyDecisionButton(action: viewModel.requestEarlySummary)
+                    EarlyDecisionButton(
+                        language: viewModel.conversationLanguage,
+                        action: viewModel.requestEarlySummary
+                    )
                         .frame(maxWidth: 560, alignment: .leading)
                         .padding(.horizontal, 16)
                 }
@@ -39,6 +44,7 @@ struct ChatView: View {
                     isProcessingImage: viewModel.isProcessingImage,
                     canSend: viewModel.canSend,
                     canAttachImage: viewModel.canAttachImage,
+                    language: viewModel.conversationLanguage,
                     isTextFieldFocused: $isComposerFocused,
                     openCamera: onCameraRequested,
                     removeImage: viewModel.removeDraftImage,
@@ -54,8 +60,20 @@ struct ChatView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Back", systemImage: "chevron.left", action: closeChat)
-                    .accessibilityHint("Cancels the active response and returns home")
+                Button(
+                    viewModel.conversationLanguage.text(
+                        indonesian: "Kembali",
+                        english: "Back"
+                    ),
+                    systemImage: "chevron.left",
+                    action: closeChat
+                )
+                .accessibilityHint(
+                    viewModel.conversationLanguage.text(
+                        indonesian: "Membatalkan sesi ini dan kembali ke beranda",
+                        english: "Cancels this session and returns home"
+                    )
+                )
             }
         }
         .onChange(of: viewModel.completedDecision) { _, decision in
@@ -72,7 +90,7 @@ struct ChatView: View {
     }
 
     private func closeChat() {
-        viewModel.cancelActiveRequest()
+        viewModel.startNewConversation()
         dismiss()
     }
 

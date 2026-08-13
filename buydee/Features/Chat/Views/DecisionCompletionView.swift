@@ -3,12 +3,16 @@ import SwiftUI
 struct DecisionCompletionView: View {
     let decision: PurchaseDecision
     let consideredPriceInRupiah: RupiahAmount?
+    let language: ChatLanguage
     let onDone: () -> Void
 
     var body: some View {
         GeometryReader { proxy in
             let panelHeight = proxy.size.height * 0.53
             let panelTop = proxy.size.height - panelHeight
+            let mascotWidth = min(proxy.size.width * 0.5, 240)
+            let mascotHeight = mascotWidth * (193.0 / 200.0)
+            let mascotPanelOverlap: CGFloat = 18
 
             ZStack(alignment: .top) {
                 Color.buydee.chatBackground
@@ -25,7 +29,21 @@ struct DecisionCompletionView: View {
                         )
                 }
 
-                DecisionCompletionPanel(decision: decision, onDone: onDone)
+                Image(mascotAssetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: mascotWidth, height: mascotHeight)
+                    .position(
+                        x: proxy.size.width / 2,
+                        y: panelTop - (mascotHeight / 2) + mascotPanelOverlap
+                    )
+                    .accessibilityHidden(true)
+
+                DecisionCompletionPanel(
+                    decision: decision,
+                    language: language,
+                    onDone: onDone
+                )
                     .frame(width: proxy.size.width, height: panelHeight)
                     .position(
                         x: proxy.size.width / 2,
@@ -40,10 +58,22 @@ struct DecisionCompletionView: View {
 
     private var byeHeadline: String {
         guard let consideredPriceInRupiah else {
-            return "Yeay! You saved money from this decision!"
+            return language.text(
+                indonesian: "Yeay! Kamu menghemat uang dari keputusan ini!",
+                english: "Yeay! You saved money from this decision!"
+            )
         }
-        let estimatePrefix = consideredPriceInRupiah.isEstimated ? "around " : ""
-        return "Yeay! You saved \(estimatePrefix)\(RupiahCurrency.formatted(consideredPriceInRupiah.value)) from this decision!"
+        let estimatePrefix = consideredPriceInRupiah.isEstimated
+            ? language.text(indonesian: "sekitar ", english: "around ")
+            : ""
+        return language.text(
+            indonesian: "Yeay! Kamu menghemat \(estimatePrefix)\(RupiahCurrency.formatted(consideredPriceInRupiah.value)) dari keputusan ini!",
+            english: "Yeay! You saved \(estimatePrefix)\(RupiahCurrency.formatted(consideredPriceInRupiah.value)) from this decision!"
+        )
+    }
+
+    private var mascotAssetName: String {
+        decision == .bye ? "img_bird_smile" : "img_bird_smile_open"
     }
 }
 
@@ -51,6 +81,7 @@ struct DecisionCompletionView: View {
     DecisionCompletionView(
         decision: .bye,
         consideredPriceInRupiah: RupiahAmount(value: 750_000, isEstimated: false),
+        language: .english,
         onDone: {}
     )
 }
@@ -59,6 +90,7 @@ struct DecisionCompletionView: View {
     DecisionCompletionView(
         decision: .buy,
         consideredPriceInRupiah: RupiahAmount(value: 16_000_000, isEstimated: true),
+        language: .english,
         onDone: {}
     )
 }
@@ -67,6 +99,7 @@ struct DecisionCompletionView: View {
     DecisionCompletionView(
         decision: .bye,
         consideredPriceInRupiah: RupiahAmount(value: 16_000_000, isEstimated: true),
+        language: .english,
         onDone: {}
     )
 }

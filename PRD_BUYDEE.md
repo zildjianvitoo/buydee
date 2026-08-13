@@ -47,7 +47,7 @@ Chatbot menggunakan camera-first entry. Home membuka Camera/Photos flow existing
 - Completion screen berbeda untuk hasil BUY dan BYE.
 - Single-flight request, cancellation, error state, dan pencegahan duplicate send.
 - Transcript hanya hidup selama runtime chat; goals tetap persisten di `UserDefaults`.
-- Satu knowledge ringkas lintas chat disimpan dan terus diperbarui melalui SwiftData.
+- Satu knowledge ringkas lintas chat disimpan melalui SwiftData hanya setelah keputusan selesai.
 - Maksimum 30 keputusan selesai disimpan sebagai record SwiftData terstruktur; maksimum 12 terbaru menjadi knowledge tambahan.
 - API key dibaca dari environment developer dan disimpan ke Keychain.
 
@@ -147,12 +147,13 @@ Referensi desain menentukan komposisi layout dan bentuk komponen, bukan warna at
 - Diakses melalui camera-first flow dari Home dan dipresentasikan melalui navigation yang dapat kembali ke Home.
 - Back action di kiri atas.
 - Transcript scrollable; bubble user rata kanan dan bubble assistant rata kiri.
+- Pada bubble assistant eksplorasi, penjelasan dan pertanyaan terakhir dipisahkan oleh `\n\n` agar ada satu baris kosong yang terlihat. UI menormalkan spacing ini sebagai fallback tanpa menghapus inline Markdown.
 - Rectangle menjadi placeholder maskot di kiri bubble assistant sampai mascot final tersedia.
 - Image bubble menjaga aspect ratio dan menampilkan gambar yang telah dipilih.
 - Jika user message berisi gambar dan caption, UI merender image bubble dan caption bubble secara terpisah. Service tetap mempertahankannya sebagai satu multimodal message agar konteks image–caption tidak terputus.
 - Composer sticky di bawah berisi input, Camera action, dan send action.
 - Camera action membuka `CameraCaptureView`; hasil `UIImage` diteruskan ke image processor sebagai draft attachment.
-- Response assistant merender Markdown H1–H6, bold, italic, inline code, link, unordered/ordered list, blockquote, fenced code block, dan highlight opsional `==...==`.
+- Response assistant tetap merender inline Markdown seperti bold, italic, link, inline code, dan highlight opsional `==...==`. Prompt melarang title/heading pada bubble eksplorasi, tetapi boleh memakai inline Markdown secara selektif untuk menekankan bagian penting.
 - Saat request aktif, tampilkan teks supportive yang muted tanpa bubble (misalnya “Bentar ya, aku lagi bantu pikirin…”), disable seluruh action yang dapat mengirim, tetapi jangan menampilkan response parsial.
 
 ### Readiness floating button
@@ -165,12 +166,12 @@ Tombol disembunyikan ketika:
 - Summary valid sudah diterima; atau
 - keputusan sudah dipilih.
 
-CTA mengirim user message melalui pipeline normal yang meminta model merangkum berdasarkan konteks tersedia. CTA tidak boleh membuat Summary lokal atau langsung menampilkan BUY/BYE.
+CTA menghentikan fase eksplorasi dan meminta model langsung merangkum berdasarkan konteks yang tersedia. Model tidak boleh bertanya lagi. Jika konteks kurang, Summary menyatakan keterbatasannya tanpa mengubahnya menjadi pertanyaan. UI menjaga fallback agar CTA tetap berakhir pada Summary dan pilihan BUY/BYE jika kontrak model tidak lengkap.
 
 ### Summary state
 
 - Summary tampil sebagai card/bubble seperti referensi dan memakai `AppColor`/`AppFont`.
-- UI merender Summary natural sekitar dua kalimat sebagai Markdown; tidak membuat bullet atau label PROS/CONS lokal dan tidak menambahkan reasoning.
+- UI merender deskripsi Summary natural sekitar dua kalimat sebagai Markdown, lalu `\n\n`, pertanyaan BUY/BYE, dan dua decision button. Summary tidak memiliki title, bullet, atau label PROS/CONS lokal.
 - BUY dan BYE mempunyai hierarki visual yang setara dan baru tampil setelah decision metadata serta pertanyaan choice tervalidasi.
 
 ### Completion
@@ -219,15 +220,15 @@ Transcript dan attachment tidak disimpan ke `UserDefaults`, SwiftData, file, ata
 | `hasCompletedOnboarding` | `@AppStorage` / `UserDefaults` | App entry routing. |
 | `userGoals` | `UserDefaults` | Context ringan untuk developer prompt. |
 | `hasSeenCameraGuide` | `UserDefaults` | Existing camera guide state. |
-| `UserChatKnowledge` | SwiftData | Satu record cumulative; diperbarui dari marker internal pada response dan digunakan sebagai knowledge tambahan chat berikutnya. |
+| `UserChatKnowledge` | SwiftData | Satu record cumulative; marker terbaru ditahan selama sesi dan baru disimpan setelah keputusan selesai. |
 | `PurchaseDecisionRecord` | SwiftData | Satu record per session yang selesai setelah tap BUY/BYE; dedupe berdasarkan session ID dan dibatasi 30 record terbaru. |
 | OpenRouter API key | Keychain | Credential saja; tidak boleh dicatat ke log. |
 
 Goals, knowledge, dan setiap field decision history di-trim lalu karakter XML (`&`, `<`, `>`, quote) di-escape sebelum dimasukkan ke `<user_context>`. Semuanya adalah data tidak tepercaya. Jika kosong, render placeholder internal; developer prompt melarang model menyebut placeholder tersebut.
 
-Setiap response model wajib berakhir dengan satu marker `<!-- BUYDEE_USER_KNOWLEDGE: ... -->`. Marker membawa versi lengkap knowledge terbaru hasil merge dengan context lama, diparse dan dibatasi maksimal 600 karakter, lalu dihapus sebelum response menjadi `ChatMessage`. Marker kosong berarti knowledge dikosongkan; response tanpa marker tidak mengubah record. Mekanisme ini memakai request chat yang sama—tidak membuat request AI tambahan. Store mempertahankan satu record dan menghapus duplicate record bila ditemukan.
+Setiap response model wajib berakhir dengan satu marker `<!-- BUYDEE_USER_KNOWLEDGE: ... -->`. Marker membawa versi lengkap knowledge terbaru hasil merge dengan context lama, diparse dan dibatasi maksimal 600 karakter, lalu dihapus sebelum response menjadi `ChatMessage`. Marker terbaru hanya ditahan di memory selama sesi dan baru ditulis setelah keputusan selesai. Back, new chat, atau app termination sebelum keputusan membuang marker tersebut. Marker kosong berarti knowledge dikosongkan; response tanpa marker tidak mengubah pending knowledge. Mekanisme ini memakai request chat yang sama dan tidak membuat request AI tambahan. Store mempertahankan satu record dan menghapus duplicate record bila ditemukan.
 
-Summary valid juga membawa marker JSON internal `BUYDEE_DECISION_METADATA` sebelum marker knowledge. Aplikasi menghapus marker dari content visual dan menaruh metadata terparse pada assistant `ChatMessage`. Ketika user tap BUY/BYE, ViewModel menggabungkan metadata dengan harga yang sudah divalidasi `DecisionSummary`, outcome, session ID, dan timestamp lalu melakukan upsert. Field yang disimpan: barang, kategori opsional, harga Rupiah terpakai, teks harga asli, flag estimasi, batas rentang opsional, outcome, waktu, ringkasan konteks/alasan tertarik/hal yang dipertimbangkan, dan goal relevan opsional. Marker metadata yang hilang atau invalid membuat decision card tidak tampil; kegagalan persistence tidak memblokir completion navigation.
+Summary valid juga membawa marker JSON internal `BUYDEE_DECISION_METADATA` sebelum marker knowledge. Aplikasi menghapus marker dari content visual dan menaruh metadata terparse pada assistant `ChatMessage`. Ketika user tap BUY/BYE, ViewModel menggabungkan metadata dengan harga yang sudah divalidasi `DecisionSummary`, outcome, session ID, dan timestamp lalu melakukan upsert. Field yang disimpan: barang, kategori opsional, harga Rupiah terpakai, teks harga asli, flag estimasi, batas rentang opsional, outcome, waktu, satu ringkasan konteks natural, dan goal relevan opsional. Marker metadata yang hilang atau invalid membuat decision card tidak tampil; kegagalan persistence tidak memblokir completion navigation.
 
 Jika user sudah mengetik pilihan sebelum decision card tersedia, response penutup harus membawa `BUYDEE_SELECTED_DECISION` bersama decision metadata. Setelah keduanya valid, ViewModel menyimpan record dan mengarahkan user ke completion yang sesuai tanpa meminta pilihan kedua kali.
 
@@ -286,6 +287,7 @@ Aplikasi tidak menyimpan phase enum. Developer prompt menginstruksikan model men
 ### Phase A — Capture & Open
 
 - Nama/jenis produk dan harga wajib diketahui sebelum eksplorasi.
+- Harga singkat seperti `40 juta`, `Rp40 juta`, atau `40 jt` dinormalisasi menjadi integer `40000000` untuk state/persistence dan ditampilkan sebagai `Rp 40.000.000` pada respons, Summary, serta completion.
 - Jika salah satu belum jelas, tanyakan tepat satu klarifikasi tanpa pertanyaan eksplorasi lain pada response yang sama.
 - Jika harga berupa rentang tertutup, tawarkan nilai tengahnya sebagai estimasi dan tunggu konfirmasi eksplisit user pada giliran terpisah. Jika user menolak, minta satu nominal atau batas rentang yang ingin dipakai. Jangan lanjut ke eksplorasi atau Summary sebelum harga ini disepakati.
 - Jangan menguatkan promo dengan framing nominal “hemat Rp…”.
@@ -329,17 +331,19 @@ Decision buttons hanya tampil ketika assistant response terakhir memenuhi seluru
 - Summary content setelah choice question dan marker internal dibuang tidak kosong;
 - jika metadata membawa batas rentang, marker `BUYDEE_MIDPOINT_CONFIRMED` juga ada.
 
-`DecisionSummary` membuang choice question dan marker midpoint dari content card, mempertahankan Markdown Summary natural, lalu mengambil harga terpakai. Button tidak tampil saat generating. UI tidak boleh menebak Summary hanya dari bubble count, phase, atau isi yang mirip.
+`DecisionSummary` memisahkan deskripsi dan choice question, membuang marker midpoint, mempertahankan inline Markdown pada keduanya, lalu mengambil harga terpakai. Card merender deskripsi, choice question, dan decision buttons secara berurutan. Button tidak tampil saat generating. UI tidak boleh menebak Summary hanya dari bubble count, phase, atau isi yang mirip.
 
 Tap button mengirim salah satu message berikut sebagai role `user` melalui pipeline normal:
 
 ```text
-BUY — Beli sekarang
+BUY, beli sekarang
 ```
 
 ```text
-BYE — Tidak beli sekarang
+BYE, tidak beli sekarang
 ```
+
+Untuk sesi English, gunakan `BUY, buy now` atau `BYE, do not buy now`.
 
 Disable kedua button segera setelah tap agar pilihan dan request Phase E hanya terkirim sekali.
 
@@ -364,10 +368,12 @@ Chat Camera action
 
 Jangan membuat flow kamera/Photos baru. Pertahankan lifecycle, cancel, permission denied, guide, flash error, retake, dan use-photo behavior milik feature Camera. Cancel tidak membuat draft atau mengirim AI request.
 
-Jika gambar dikirim tanpa caption, gunakan internal prompt:
+Jika gambar dikirim tanpa caption, gunakan internal prompt sesuai bahasa sesi:
 
 ```text
 Identifikasi barang dan harga yang terlihat, lalu bantu aku mempertimbangkannya sebelum membeli.
+
+Identify the visible item and price, then help me think it through before buying.
 ```
 
 Multimodal content:
@@ -438,6 +444,7 @@ Resolver redirect non-AI, Share Extension, dan rich link parsing adalah roadmap 
 - [ ] Chat, Summary, dan completion memakai `Color.buydee` dan fonts dari `AppFont.swift`.
 - [ ] Rectangle muncul sebagai mascot placeholder di sisi assistant.
 - [ ] Readiness CTA muncul setelah dua exchange lengkap dan tidak mem-bypass Summary.
+- [ ] Tap readiness CTA menghentikan eksplorasi, tidak memunculkan pertanyaan baru, dan langsung menghasilkan Summary atau keterangan bahwa konteksnya masih terbatas.
 - [ ] Layout tetap usable pada Dynamic Type dan elemen interaktif memiliki VoiceOver label.
 
 ### AI request
@@ -450,6 +457,7 @@ Resolver redirect non-AI, Share Extension, dan rich link parsing adalah roadmap 
 - [ ] Response non-streaming; hanya satu request dapat aktif.
 - [ ] Cancellation mengabaikan late response dan double tap tidak menduplikasi send.
 - [ ] Transcript hilang pada new chat/finish, sedangkan goals tersedia setelah relaunch.
+- [ ] Back atau app termination sebelum keputusan tidak menyimpan pending user knowledge maupun decision record.
 
 ### Camera dan image
 

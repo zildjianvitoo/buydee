@@ -3,16 +3,14 @@ import SwiftUI
 struct ChatSummaryCard: View {
     let summary: DecisionSummary
     let isEnabled: Bool
+    let language: ChatLanguage
     let onDecision: (PurchaseDecision) -> Void
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Take a look at this")
-                    .font(.buydeeChatSummaryTitle)
-
-                if !summary.content.isEmpty {
-                    ChatMarkdownText(summary.content)
+                if !summary.displayMarkdown.isEmpty {
+                    ChatMarkdownText(summary.displayMarkdown)
                         .font(.buydeeChatMessage)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -21,7 +19,7 @@ struct ChatSummaryCard: View {
                     decisionButton(for: .bye)
                     decisionButton(for: .buy)
                 }
-                .padding(.top, 12)
+                .padding(.top, 4)
             }
             .foregroundStyle(Color.white)
             .padding(16)
@@ -47,7 +45,16 @@ struct ChatSummaryCard: View {
         .background(decision == .bye ? Color.buydee.background : Color.buydee.cardBackground)
         .clipShape(Capsule())
         .disabled(!isEnabled)
-        .accessibilityHint(decision == .buy ? "Choose to buy now" : "Choose not to buy now")
+        .accessibilityHint(
+            language.text(
+                indonesian: decision == .buy
+                    ? "Pilih untuk membeli sekarang"
+                    : "Pilih untuk tidak membeli sekarang",
+                english: decision == .buy
+                    ? "Choose to buy now"
+                    : "Choose not to buy now"
+            )
+        )
     }
 }
 
@@ -62,14 +69,14 @@ struct ChatSummaryCard: View {
             productName: "Sepatu lari",
             productCategory: "Sepatu",
             originalPriceText: "Rp1.500.000",
-            contextSummary: "Desain disukai tetapi sudah ada dua pasang serupa.",
-            prosSummary: "Desain disukai dan diperkirakan sering dipakai.",
-            consSummary: "Sudah memiliki dua pasang untuk kebutuhan serupa."
+            priceInRupiah: 1_500_000,
+            contextSummary: "Desain disukai tetapi sudah ada dua pasang serupa."
         )
     ) {
         ChatSummaryCard(
             summary: summary,
             isEnabled: true,
+            language: .indonesian,
             onDecision: { _ in }
         )
         .padding(16)
