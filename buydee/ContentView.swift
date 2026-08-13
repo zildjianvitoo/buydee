@@ -8,11 +8,10 @@ struct ContentView: View {
     @State private var homeViewModel = HomeViewModel()
     @State private var showsCamera = false
     @State private var sendsCaptureToChat = false
-    @State private var latestConsideredPriceInRupiah: RupiahAmount?
 
     private enum Route: Hashable {
         case chat
-        case completion(PurchaseDecision)
+        case completion(PurchaseDecision, RupiahAmount?)
     }
 
     var body: some View {
@@ -26,10 +25,11 @@ struct ContentView: View {
                             onDecision: showCompletion,
                             onCameraRequested: openChatCamera
                         )
-                    case .completion(let decision):
+                    case .completion(let decision, let consideredPrice):
                         DecisionCompletionView(
                             decision: decision,
-                            consideredPriceInRupiah: latestConsideredPriceInRupiah,
+                            consideredPriceInRupiah: consideredPrice,
+                            language: chatViewModel.conversationLanguage,
                             onDone: finishCheck
                         )
                     }

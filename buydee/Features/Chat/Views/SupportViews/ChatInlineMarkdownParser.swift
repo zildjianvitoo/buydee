@@ -74,6 +74,8 @@ enum ChatInlineMarkdownParser {
             if highlightedContentStart < closingIndex {
                 attributedString[highlightedContentStart..<closingIndex].backgroundColor =
                     Color.buydee.background
+                attributedString[highlightedContentStart..<closingIndex].foregroundColor =
+                    Color.buydee.primaryText
             }
 
             let afterClosingIndex = attributedString.characters.index(after: closingIndex)

@@ -36,7 +36,7 @@ struct BuydeeColors {
 
     let primaryButton = Color(hex: "#54581A")
     let primaryText = Color(hex: "#332B20")
-    let secondaryText = Color.secondary
+    let secondaryText = Color(hex: "#776E62")
 
     let linkText = Color(hex: "#1E2691")
 

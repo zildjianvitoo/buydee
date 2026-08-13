@@ -20,7 +20,8 @@ struct OpenRouterChatService: ChatServicing {
         history: [ChatMessage],
         goals: String,
         userKnowledge: String,
-        decisionHistory: [PurchaseDecisionMemory]
+        decisionHistory: [PurchaseDecisionMemory],
+        language: ChatLanguage
     ) async throws -> ChatServiceResponse {
         try Task.checkCancellation()
 
@@ -38,8 +39,8 @@ struct OpenRouterChatService: ChatServicing {
         ]
         requestMessages += history
             .suffix(configuration.maximumHistoryCount)
-            .map(makeRequestMessage)
-        requestMessages.append(makeRequestMessage(from: latestMessage))
+            .map { makeRequestMessage(from: $0, language: language) }
+        requestMessages.append(makeRequestMessage(from: latestMessage, language: language))
 
         let body = Request(
             model: configuration.model,
@@ -95,7 +96,10 @@ struct OpenRouterChatService: ChatServicing {
         }
     }
 
-    private func makeRequestMessage(from message: ChatMessage) -> Request.Message {
+    private func makeRequestMessage(
+        from message: ChatMessage,
+        language: ChatLanguage
+    ) -> Request.Message {
         let role: Role = message.role == .user ? .user : .assistant
         let trimmedContent = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -103,7 +107,7 @@ struct OpenRouterChatService: ChatServicing {
             return Request.Message(role: role, content: .text(trimmedContent))
         }
 
-        let caption = trimmedContent.isEmpty ? Self.imageOnlyCaption : trimmedContent
+        let caption = trimmedContent.isEmpty ? language.imageOnlyCaption : trimmedContent
         let attachment = DraftImageAttachment(jpegData: imageData)
         return Request.Message(
             role: role,
@@ -114,8 +118,6 @@ struct OpenRouterChatService: ChatServicing {
         )
     }
 
-    private static let imageOnlyCaption =
-        "Identifikasi barang dan harga yang terlihat, lalu bantu aku mempertimbangkannya sebelum membeli."
 }
 
 private extension OpenRouterChatService {

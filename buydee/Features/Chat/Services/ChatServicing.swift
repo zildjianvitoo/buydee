@@ -6,6 +6,7 @@ protocol ChatServicing: Sendable {
         history: [ChatMessage],
         goals: String,
         userKnowledge: String,
-        decisionHistory: [PurchaseDecisionMemory]
+        decisionHistory: [PurchaseDecisionMemory],
+        language: ChatLanguage
     ) async throws -> ChatServiceResponse
 }

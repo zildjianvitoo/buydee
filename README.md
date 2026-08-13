@@ -16,10 +16,10 @@ Target chatbot MVP:
 - camera-first entry dari Home menuju ChatView dengan image draft;
 - reflective chat teks dan gambar melalui OpenRouter;
 - integrasi camera/Photos existing ke draft chatbot;
-- Summary dengan strict BUY/BYE marker;
+- Summary natural dua kalimat dengan strict decision-metadata gate;
 - completion screen BUY dan BYE;
 - runtime-only transcript, cancellation, dan duplicate-send protection.
-- cumulative user knowledge yang ringkas melalui satu record SwiftData;
+- cumulative user knowledge yang ringkas melalui satu record SwiftData setelah keputusan selesai;
 - daftar maksimum 30 keputusan selesai (barang, harga, BUY/BYE, dan ringkasan trade-off) di SwiftData.
 
 SwiftData transcript/chat history, OCR, Screenshot Shortcut, Share Extension, product-link analysis, widgets, dan reminders bukan scope chatbot MVP. URL-only tidak dikirim ke model. SwiftData menyimpan context global ringkas dan record keputusan selesai, bukan pesan, gambar, atau transcript lengkap.
@@ -121,14 +121,15 @@ Pada run pertama, aplikasi membaca environment key dan menyimpannya ke Keychain.
 ## Chatbot contract ringkas
 
 - Developer prompt penuh menentukan fase; aplikasi tidak menyimpan enum fase.
-- Nama produk dan harga harus diketahui sebelum eksplorasi DARN.
+- Nama produk dan harga harus diketahui sebelum eksplorasi.
 - Harga berbentuk rentang harus dikonfirmasi dulu: AI menawarkan nilai tengah, menunggu persetujuan user, dan Summary berbasis midpoint wajib membawa marker `<!-- BUYDEE_MIDPOINT_CONFIRMED -->`.
-- Summary wajib mengandung `**PROS:**`, `**CONS:**`, `**BUY**`, dan `**BYE**` sebelum tombol decision tampil.
-- Tap decision mengirim `BUY — Beli sekarang` atau `BYE — Tidak beli sekarang` sebagai user message.
+- Harga singkat seperti `40 juta` disimpan sebagai integer `40000000` dan ditampilkan sebagai `Rp 40.000.000` pada respons, Summary, dan completion.
+- Summary terlihat sebagai deskripsi Markdown natural, pertanyaan BUY/BYE pada baris baru, lalu dua tombol tanpa title, bullet, atau label PROS/CONS. Tombol baru tampil jika pertanyaan memuat `**BUY**`/`**BYE**` dan marker `BUYDEE_DECISION_METADATA` berhasil diparse.
+- Tap decision mengirim template BUY/BYE sesuai bahasa awal pengguna.
 - Satu request AI saja boleh aktif; back/new chat membatalkan request dan late response diabaikan.
-- Transcript hanya runtime; `userGoals` persisten di `UserDefaults`, context penting lintas chat disimpan sebagai satu record SwiftData, dan keputusan selesai disimpan sebagai daftar terpisah.
+- Transcript hanya runtime; `userGoals` persisten di `UserDefaults`, sedangkan context penting dan record keputusan baru disimpan setelah keputusan selesai.
 - Marker knowledge dan decision metadata internal dihapus sebelum bubble dirender dan tidak membutuhkan request AI kedua.
-- Decision record hanya dibuat setelah Summary valid dan user tap BUY/BYE; maksimum 12 record terbaru menjadi knowledge tambahan pada chat berikutnya.
+- Decision record dibuat setelah Summary valid dan user tap BUY/BYE, atau setelah early typed decision dikonfirmasi model melalui marker internal; maksimum 12 record terbaru menjadi knowledge tambahan pada chat berikutnya.
 - Image menggunakan model vision yang sama setelah resize 2048/JPEG 0.82; tidak ada OCR atau image-analysis service kedua.
 - URL HTTP/HTTPS tanpa gambar ditolak sebelum send.
 

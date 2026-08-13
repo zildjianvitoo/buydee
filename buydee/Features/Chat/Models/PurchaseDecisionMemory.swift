@@ -14,8 +14,6 @@ struct PurchaseDecisionMemory: Identifiable, Equatable, Sendable {
     let decision: PurchaseDecision
     let decidedAt: Date
     let contextSummary: String
-    let prosSummary: String
-    let consSummary: String
     let relatedGoal: String?
 }
 
@@ -33,6 +31,8 @@ final class PurchaseDecisionRecord {
     var decisionRawValue: String
     var decidedAt: Date
     var contextSummary: String
+    // Kept only so existing SwiftData stores can migrate without losing records.
+    // New prompt and UI contracts no longer create separate pros/cons content.
     var prosSummary: String
     var consSummary: String
     var relatedGoal: String?
@@ -50,8 +50,8 @@ final class PurchaseDecisionRecord {
         decisionRawValue = memory.decision.rawValue
         decidedAt = memory.decidedAt
         contextSummary = memory.contextSummary
-        prosSummary = memory.prosSummary
-        consSummary = memory.consSummary
+        prosSummary = ""
+        consSummary = ""
         relatedGoal = memory.relatedGoal
     }
 
@@ -70,8 +70,6 @@ final class PurchaseDecisionRecord {
             decision: decision,
             decidedAt: decidedAt,
             contextSummary: contextSummary,
-            prosSummary: prosSummary,
-            consSummary: consSummary,
             relatedGoal: relatedGoal
         )
     }
@@ -88,8 +86,8 @@ final class PurchaseDecisionRecord {
         decisionRawValue = memory.decision.rawValue
         decidedAt = memory.decidedAt
         contextSummary = memory.contextSummary
-        prosSummary = memory.prosSummary
-        consSummary = memory.consSummary
+        prosSummary = ""
+        consSummary = ""
         relatedGoal = memory.relatedGoal
     }
 }

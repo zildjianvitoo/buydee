@@ -6,12 +6,16 @@ enum PurchaseDecision: String, Identifiable, Hashable, Sendable {
 
     var id: Self { self }
 
-    var apiMessage: String {
-        switch self {
-        case .buy:
-            "BUY — Beli sekarang"
-        case .bye:
-            "BYE — Tidak beli sekarang"
+    func apiMessage(in language: ChatLanguage) -> String {
+        switch (self, language) {
+        case (.buy, .indonesian):
+            "BUY, beli sekarang"
+        case (.bye, .indonesian):
+            "BYE, tidak beli sekarang"
+        case (.buy, .english):
+            "BUY, buy now"
+        case (.bye, .english):
+            "BYE, do not buy now"
         }
     }
 }

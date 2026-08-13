@@ -44,7 +44,7 @@ struct ChatMessageBubble: View {
                         )
                 }
 
-                if !message.content.isEmpty {
+                if !message.bubbleContent.isEmpty {
                     messageText
                         .textSelection(.enabled)
                         .font(.buydeeChatMessage)
@@ -63,7 +63,7 @@ struct ChatMessageBubble: View {
                                 .accessibilityHidden(true)
                         }
                         .accessibilityLabel(
-                            "\(message.role == .assistant ? "Buydee" : "You"): \(message.content)"
+                            "\(message.role == .assistant ? "Buydee" : "You"): \(message.bubbleContent)"
                         )
                 }
             }
@@ -86,9 +86,9 @@ struct ChatMessageBubble: View {
     @ViewBuilder
     private var messageText: some View {
         if message.role == .assistant {
-            ChatMarkdownText(message.content)
+            ChatMarkdownText(message.bubbleContent)
         } else {
-            Text(message.content)
+            Text(message.bubbleContent)
         }
     }
 

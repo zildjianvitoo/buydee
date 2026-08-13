@@ -7,15 +7,31 @@ enum ChatServiceError: LocalizedError {
     case emptyResponse
 
     var errorDescription: String? {
+        message(in: .deviceDefault)
+    }
+
+    func message(in language: ChatLanguage) -> String {
         switch self {
         case .missingAPIKey:
-            "OpenRouter API key belum tersedia. Tambahkan OPENROUTER_API_KEY melalui environment Xcode."
+            language.text(
+                indonesian: "OpenRouter API key belum tersedia. Tambahkan OPENROUTER_API_KEY melalui environment Xcode.",
+                english: "The OpenRouter API key is unavailable. Add OPENROUTER_API_KEY through the Xcode environment."
+            )
         case .invalidResponse:
-            "Respons AI tidak dapat dibaca. Coba lagi, ya."
+            language.text(
+                indonesian: "Respons belum dapat dibaca. Coba lagi, ya.",
+                english: "The response could not be read. Please try again."
+            )
         case .requestFailed(let statusCode):
-            "AI belum bisa dihubungi (kode \(statusCode)). Coba beberapa saat lagi."
+            language.text(
+                indonesian: "Layanan belum bisa dihubungi dengan kode \(statusCode). Coba beberapa saat lagi.",
+                english: "The service could not be reached with code \(statusCode). Please try again shortly."
+            )
         case .emptyResponse:
-            "AI belum memberi jawaban. Coba kirim ulang pesanmu."
+            language.text(
+                indonesian: "Belum ada jawaban yang diterima. Coba kirim ulang pesanmu.",
+                english: "No answer was received. Please send your message again."
+            )
         }
     }
 }

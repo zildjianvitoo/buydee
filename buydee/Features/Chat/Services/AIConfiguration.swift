@@ -14,7 +14,7 @@ struct AIConfiguration: Sendable {
         model: "openai/gpt-5.6-luna",
         maximumHistoryCount: 12,
         maximumOutputTokens: 2_048,
-        reasoningEffort: .medium,
+        reasoningEffort: .low,
         excludesReasoningFromResponse: true,
         timeout: 90
     )

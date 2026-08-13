@@ -3,6 +3,7 @@ import SwiftUI
 struct ChatErrorBanner: View {
     let message: String
     let canRetry: Bool
+    let language: ChatLanguage
     let retry: () -> Void
 
     var body: some View {
@@ -17,7 +18,10 @@ struct ChatErrorBanner: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if canRetry {
-                Button("Retry", action: retry)
+                Button(
+                    language.text(indonesian: "Coba lagi", english: "Retry"),
+                    action: retry
+                )
                     .font(.buydeeChatButton)
                     .frame(minHeight: 44)
             }
@@ -25,6 +29,8 @@ struct ChatErrorBanner: View {
         .padding(.horizontal, 16)
         .background(Color.buydee.cardBackground)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Error: \(message)")
+        .accessibilityLabel(
+            "\(language.text(indonesian: "Kesalahan", english: "Error")): \(message)"
+        )
     }
 }
