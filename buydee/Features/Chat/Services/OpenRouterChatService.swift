@@ -32,7 +32,8 @@ struct OpenRouterChatService: ChatServicing {
                     DeveloperPrompt.render(
                         goals: goals,
                         userKnowledge: userKnowledge,
-                        decisionHistory: decisionHistory
+                        decisionHistory: decisionHistory,
+                        language: language
                     )
                 )
             )

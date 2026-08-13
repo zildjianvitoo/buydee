@@ -5,7 +5,7 @@ enum ImageAttachmentError: LocalizedError {
     case encodingFailed
 
     var errorDescription: String? {
-        message(in: .deviceDefault)
+        message(in: .primaryDefault)
     }
 
     func message(in language: ChatLanguage) -> String {

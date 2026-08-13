@@ -11,7 +11,7 @@ struct ContentView: View {
 
     private enum Route: Hashable {
         case chat
-        case completion(PurchaseDecision, RupiahAmount?)
+        case completion(PurchaseDecision, RupiahAmount?, ChatLanguage)
     }
 
     var body: some View {
@@ -25,11 +25,11 @@ struct ContentView: View {
                             onDecision: showCompletion,
                             onCameraRequested: openChatCamera
                         )
-                    case .completion(let decision, let consideredPrice):
+                    case .completion(let decision, let consideredPrice, let language):
                         DecisionCompletionView(
                             decision: decision,
                             consideredPriceInRupiah: consideredPrice,
-                            language: chatViewModel.conversationLanguage,
+                            language: language,
                             onDone: finishCheck
                         )
                     }
@@ -81,13 +81,18 @@ struct ContentView: View {
 
     private func showCompletion(_ decision: PurchaseDecision) {
         let consideredPrice = chatViewModel.latestConsideredPriceInRupiah
-        latestConsideredPriceInRupiah = consideredPrice
 
         if decision == .bye, let consideredPrice {
             homeViewModel.addSavings(consideredPrice.value)
         }
 
-        path.append(.completion(decision))
+        path.append(
+            .completion(
+                decision,
+                consideredPrice,
+                chatViewModel.conversationLanguage
+            )
+        )
     }
 
     private func finishCheck() {

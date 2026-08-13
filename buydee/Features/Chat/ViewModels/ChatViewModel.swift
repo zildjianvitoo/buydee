@@ -28,7 +28,7 @@ final class ChatViewModel {
     @ObservationIgnored private var lastRequestedMessage: ChatMessage?
     @ObservationIgnored private var lastRequestHistory: [ChatMessage] = []
     @ObservationIgnored private var lastRequestRequiresSummary = false
-    @ObservationIgnored private var didDetectLanguageFromUserText = false
+    @ObservationIgnored private var hasLockedConversationLanguage = false
     private(set) var isProcessingImage = false
 
     init(
@@ -39,7 +39,7 @@ final class ChatViewModel {
         self.service = service
         self.imageProcessor = imageProcessor
         self.userDefaults = userDefaults
-        conversationLanguage = .deviceDefault
+        conversationLanguage = .primaryDefault
     }
 
     convenience init() {
@@ -110,7 +110,7 @@ final class ChatViewModel {
             )
             return
         }
-        detectConversationLanguageIfNeeded(from: text)
+        lockConversationLanguageIfNeeded(from: text)
 
         let latestMessage = ChatMessage(
             role: .user,
@@ -223,8 +223,8 @@ final class ChatViewModel {
         completedDecision = nil
         pendingUserKnowledge = nil
         hasStoppedExploration = false
-        conversationLanguage = .deviceDefault
-        didDetectLanguageFromUserText = false
+        conversationLanguage = .primaryDefault
+        hasLockedConversationLanguage = false
         sessionID = UUID()
     }
 
@@ -424,13 +424,16 @@ final class ChatViewModel {
         completedDecision = selectedDecision
     }
 
-    private func detectConversationLanguageIfNeeded(from text: String) {
-        guard !didDetectLanguageFromUserText, !text.isEmpty else { return }
-        conversationLanguage = ChatLanguage.detected(
-            from: text,
-            fallback: conversationLanguage
-        )
-        didDetectLanguageFromUserText = true
+    private func lockConversationLanguageIfNeeded(from text: String) {
+        guard !hasLockedConversationLanguage else { return }
+
+        if !text.isEmpty {
+            conversationLanguage = ChatLanguage.detected(
+                from: text,
+                fallback: conversationLanguage
+            )
+        }
+        hasLockedConversationLanguage = true
     }
 
     private func enforcingSummaryContract(

@@ -5,11 +5,7 @@ enum ChatLanguage: String, Sendable {
     case indonesian
     case english
 
-    static var deviceDefault: Self {
-        Locale.current.language.languageCode?.identifier == "id"
-            ? .indonesian
-            : .english
-    }
+    static var primaryDefault: Self { .english }
 
     static func detected(from text: String, fallback: Self) -> Self {
         let normalized = text.lowercased()
@@ -42,6 +38,15 @@ enum ChatLanguage: String, Sendable {
             return .english
         default:
             return fallback
+        }
+    }
+
+    var sessionPromptInstruction: String {
+        switch self {
+        case .indonesian:
+            "Gunakan Bahasa Indonesia untuk SEMUA content yang terlihat pengguna selama sesi ini, termasuk bubble eksplorasi, Summary, pertanyaan BUY/BYE, respons penutup, dan acknowledgement keputusan. Jangan berganti ke English hanya karena ada istilah, nama produk, atau pesan singkat berbahasa English."
+        case .english:
+            "Use English for ALL user-visible content throughout this session, including exploration bubbles, the Summary, the BUY/BYE question, closing responses, and decision acknowledgements. Do not switch to Indonesian because of an Indonesian term, product name, or short Indonesian message."
         }
     }
 
