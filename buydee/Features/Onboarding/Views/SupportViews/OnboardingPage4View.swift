@@ -124,10 +124,17 @@ struct GoalSelectionRow: View {
         VStack(spacing: 0) {
             Button(action: action) {
                 HStack(spacing: 16) {
-                    Image(systemName: goal.iconName)
-                        .font(.title3)
-                        .foregroundStyle(Color.buydee.primaryText)
-                        .frame(width: 24)
+                    if goal.isSystemIcon {
+                        Image(systemName: goal.iconName)
+                            .font(.title3)
+                            .foregroundStyle(Color.buydee.primaryText)
+                            .frame(width: 24, height: 24)
+                    } else {
+                        Image(goal.iconName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                    }
                     Text(goal.rawValue)
                         .font(.buydeeHeadline)
                         .foregroundStyle(Color.buydee.primaryText)

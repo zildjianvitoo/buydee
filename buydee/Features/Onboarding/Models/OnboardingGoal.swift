@@ -11,10 +11,16 @@ enum OnboardingGoal: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
     var iconName: String {
         switch self {
-        case .holiday: return "airplane"
-        case .invest: return "dollarsign.circle.fill"
-        case .savings: return "bag.fill"
+        case .holiday: return "holiday-fund"
+        case .invest: return "invest-it"
+        case .savings: return "my-savings"
         case .others: return "square.and.pencil"
+        }
+    }
+    var isSystemIcon: Bool {
+        switch self {
+        case .others: return true
+        default: return false
         }
     }
 }
