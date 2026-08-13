@@ -34,7 +34,7 @@ struct DecisionCompletionPanel: View {
                                     english: "All Set!"
                                 )
                             )
-                                .font(.buydeeChatCompletionTitle)
+                            .font(.buydeeChatCompletionTitle)
 
                             Text(decisionText)
                                 .font(.buydeeHeadline)
@@ -48,19 +48,22 @@ struct DecisionCompletionPanel: View {
 
                         Spacer(minLength: 24)
 
-                        Button(action: onDone) {
+                        Button {
+                            onDone()
+                        } label: {
                             Text(
                                 language.text(
                                     indonesian: "Aku siap lanjut!",
                                     english: "I’m good to go!"
                                 )
                             )
-                                .font(.buydeeChatButton)
-                                .foregroundStyle(buttonForeground)
-                                .frame(maxWidth: .infinity)
+                            .font(.buydeeChatButton)
+                            .foregroundStyle(buttonForeground)
+                            .padding(.vertical,12)
+                            .padding(.horizontal, 64)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(buttonBackground)
+                        .background(buttonBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small, style: .continuous))
                         .controlSize(.large)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .accessibilityHint(

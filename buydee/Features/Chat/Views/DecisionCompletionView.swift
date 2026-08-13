@@ -25,7 +25,7 @@ struct DecisionCompletionView: View {
                         .frame(maxWidth: min(proxy.size.width - 48, 560))
                         .position(
                             x: proxy.size.width / 2,
-                            y: max(proxy.safeAreaInsets.top + 72, panelTop * 0.52)
+                            y: max(proxy.safeAreaInsets.top + 164, panelTop * 0.4)
                         )
                 }
 
