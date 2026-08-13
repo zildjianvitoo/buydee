@@ -43,14 +43,17 @@ struct EditGoalSheet: View {
             Text("What would you like to keep in mind\nbefore you buy?")
                 .font(.buydeeHeadline)
                 .foregroundStyle(Color.buydee.primaryText)
+                .fontWeight(.semibold)
 
             Text("This data will be used to personalize the app.")
                 .font(.buydeeSubheadline)
-                .foregroundStyle(Color.buydee.secondaryText)
+                .foregroundStyle(Color.buydee.primaryText)
                 .padding(.top, 8)
+                .fontWeight(.regular)
 
             TextField("Enter your goal", text: $goalText)
                 .font(.buydeeFootnote)
+                .foregroundStyle(Color.buydee.primaryText)
                 .padding(.horizontal, 17)
                 .padding(.vertical, 16)
                 .background(Color.buydee.cardBackground)
@@ -70,6 +73,7 @@ struct EditGoalSheet: View {
         HStack {
             Text("Goals")
                 .font(.buydeeTitle2)
+                .foregroundStyle(Color.buydee.primaryText)
 
             Spacer()
 

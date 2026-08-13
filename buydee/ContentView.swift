@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var path: [Route] = []
     @State private var chatViewModel = ChatViewModel()
+    @State private var homeViewModel = HomeViewModel()
     @State private var showsCamera = false
     @State private var sendsCaptureToChat = false
 
@@ -15,7 +16,7 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            HomeView(newCheckAction: openHomeCamera)
+            HomeView(viewModel: homeViewModel, newCheckAction: openHomeCamera)
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .chat:
@@ -79,12 +80,14 @@ struct ContentView: View {
     }
 
     private func showCompletion(_ decision: PurchaseDecision) {
-        path.append(
-            .completion(
-                decision,
-                chatViewModel.latestConsideredPriceInRupiah
-            )
-        )
+        let consideredPrice = chatViewModel.latestConsideredPriceInRupiah
+        latestConsideredPriceInRupiah = consideredPrice
+
+        if decision == .bye, let consideredPrice {
+            homeViewModel.addSavings(consideredPrice.value)
+        }
+
+        path.append(.completion(decision))
     }
 
     private func finishCheck() {
