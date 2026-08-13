@@ -56,7 +56,7 @@ struct ChatComposerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.buydee.oliveGreen, lineWidth: 1)
+                            .stroke(Color.buydee.chatComposerBorder, lineWidth: 1)
                     )
                     .focused($isTextFieldFocused)
                     .submitLabel(.send)
@@ -69,10 +69,10 @@ struct ChatComposerView: View {
                 } label: {
                     Image(systemName: "paperplane.fill")
                         .font(.system(size: 20))
-                        .foregroundStyle(Color.buydee.primaryText)
+                        .foregroundStyle(Color.buydee.chatComposerButtonForeground)
                 }
                 .padding(8)
-                .background(Color.buydee.background)
+                .background(Color.buydee.chatComposerButton)
                 .clipShape(Circle())
                 .disabled(!canSend)
             }
