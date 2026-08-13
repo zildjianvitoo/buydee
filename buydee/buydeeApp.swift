@@ -13,11 +13,7 @@ struct BuydeeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                ContentView()
-            } else {
-                OnboardingView()
-            }
+            SplashGateView(hasCompletedOnboarding: $hasCompletedOnboarding)
         }
         .modelContainer(for: [UserChatKnowledge.self, PurchaseDecisionRecord.self])
     }
