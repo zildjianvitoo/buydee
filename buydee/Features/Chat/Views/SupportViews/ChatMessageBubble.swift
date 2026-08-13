@@ -94,13 +94,13 @@ struct ChatMessageBubble: View {
 
     private var bubbleColor: Color {
         message.role == .assistant
-            ? Color.buydee.deepOliveGreen
-            : Color.buydee.background
+            ? Color.buydee.white
+        : Color.buydee.lightOliveGreen
     }
 
     private var textColor: Color {
         message.role == .assistant
-        ? Color.white
+        ? Color.black
         : Color.black
     }
 

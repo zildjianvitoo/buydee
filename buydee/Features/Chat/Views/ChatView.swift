@@ -16,7 +16,7 @@ struct ChatView: View {
             dismissKeyboard: dismissKeyboard,
             onDecision: chooseDecision
         )
-        .background(Color.buydee.chatBackground)
+        .background(Color.buydee.canvasBackground)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
                 if let errorMessage = viewModel.errorMessage {
