@@ -43,7 +43,7 @@ struct OnboardingPage5View: View {
             .padding(.bottom, 48)
         }
         .background(
-            Image("BGOnboarding5")
+            Image("bg-onboarding-5")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
