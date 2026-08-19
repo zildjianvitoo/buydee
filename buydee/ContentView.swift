@@ -1,33 +1,110 @@
-//
-//  ContentView.swift
-//  buydee
-//
-//  Created by Zildjian Vito  on 06/08/26.
-//
-
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @Environment(\.modelContext) private var modelContext
+    @State private var path: [Route] = []
+    @State private var chatViewModel = ChatViewModel()
+    @State private var homeViewModel = HomeViewModel()
+    @State private var showsCamera = false
+    @State private var sendsCaptureToChat = false
+
+    private enum Route: Hashable {
+        case chat
+        case completion(PurchaseDecision, RupiahAmount?, ChatLanguage)
+    }
 
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "house.fill")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Home View (Placeholder)")
-                .font(.title) // Dynamic Type
-            
-            Button("Reset Onboarding (Dev Only)") {
-                hasCompletedOnboarding = false
-            }
-            .padding(.top, 20)
-            .buttonStyle(.borderedProminent)
+        NavigationStack(path: $path) {
+            HomeView(viewModel: homeViewModel, newCheckAction: openHomeCamera)
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                    case .chat:
+                        ChatView(
+                            viewModel: chatViewModel,
+                            onDecision: showCompletion,
+                            onCameraRequested: openChatCamera
+                        )
+                    case .completion(let decision, let consideredPrice, let language):
+                        DecisionCompletionView(
+                            decision: decision,
+                            consideredPriceInRupiah: consideredPrice,
+                            language: language,
+                            onDone: finishCheck
+                        )
+                    }
+                }
         }
-        .padding()
+        .tint(Color.buydee.primaryButton)
+        .fullScreenCover(isPresented: $showsCamera) {
+            CameraCaptureView(
+                onDismiss: dismissCamera,
+                onImageCaptured: handleCapturedImage
+            )
+        }
+        .task {
+            chatViewModel.configureUserKnowledgeStore(
+                SwiftDataUserKnowledgeStore(modelContext: modelContext)
+            )
+            chatViewModel.configureDecisionHistoryStore(
+                SwiftDataDecisionHistoryStore(modelContext: modelContext)
+            )
+        }
+    }
+
+    private func openHomeCamera() {
+        sendsCaptureToChat = false
+        showsCamera = true
+    }
+
+    private func openChatCamera() {
+        sendsCaptureToChat = true
+        showsCamera = true
+    }
+
+    private func dismissCamera() {
+        showsCamera = false
+    }
+
+    private func handleCapturedImage(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.95) ?? image.pngData() else {
+            return
+        }
+
+        if !sendsCaptureToChat {
+            chatViewModel.startNewConversation()
+            path.append(.chat)
+        }
+
+        chatViewModel.attachImageData(data)
+    }
+
+    private func showCompletion(_ decision: PurchaseDecision) {
+        let consideredPrice = chatViewModel.latestConsideredPriceInRupiah
+
+        if decision == .bye, let consideredPrice {
+            homeViewModel.addSavings(consideredPrice.value)
+        }
+
+        path.append(
+            .completion(
+                decision,
+                consideredPrice,
+                chatViewModel.conversationLanguage
+            )
+        )
+    }
+
+    private func finishCheck() {
+        chatViewModel.startNewConversation()
+        path.removeAll()
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(
+            for: [UserChatKnowledge.self, PurchaseDecisionRecord.self],
+            inMemory: true
+        )
 }
