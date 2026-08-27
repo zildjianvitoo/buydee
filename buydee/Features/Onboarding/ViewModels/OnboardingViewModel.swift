@@ -2,18 +2,15 @@
 //  OnboardingViewModel.swift
 //  buydee
 //
-
 import SwiftUI
-import UserNotifications
 
 @Observable
-class OnboardingViewModel {
+@MainActor
+final class OnboardingViewModel {
     var currentPage: Int = 0
-    let totalPages: Int = 4 // Pages 1 and 2 are placeholders, 3 and 4 are implemented
-    
+    let totalPages: Int = 5
     var selectedGoal: OnboardingGoal? = nil
-    var customGoalText: String = ""
-    
+    var customGoalTexts: [OnboardingGoal: String] = [:]
     func nextPage() {
         if currentPage < totalPages - 1 {
             withAnimation {
@@ -21,21 +18,28 @@ class OnboardingViewModel {
             }
         }
     }
-    
     func selectGoal(_ goal: OnboardingGoal) {
-        selectedGoal = goal
-        if goal != .others {
-            customGoalText = ""
+        if selectedGoal == goal {
+            // Jika ditap lagi saat sudah terbuka, tutup (deselect)
+            selectedGoal = nil
+        } else {
+            // Pilih goal baru
+            selectedGoal = goal
         }
     }
-    
     func completeOnboarding() {
-        // Request notification permission before finishing
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            DispatchQueue.main.async {
-                // Save onboarding state regardless of permission granted or not
-                UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+        var goals = ""
+        if let selected = selectedGoal {
+            let typedText = customGoalTexts[selected]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if selected == .others {
+                goals = typedText
+            } else {
+                goals = typedText.isEmpty ? selected.rawValue : typedText
             }
         }
+
+        UserDefaults.standard.set(goals, forKey: "userGoals")
+
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
     }
 }

@@ -12,7 +12,7 @@ Kita menggunakan **Git Flow (simplified)** dengan 3 level branch:
 main          ← production-ready, hanya dari merge dev
   └── dev     ← integration branch, semua feature di-merge ke sini
        ├── feat/chat-ui
-       ├── feat/gemini-service
+       ├── feat/openrouter-service
        ├── fix/camera-crash
        └── ...
 ```
@@ -79,11 +79,11 @@ Semua commit message **wajib** mengikuti format [Conventional Commits](https://w
 |------|--------------|--------|
 | `feat` | Menambah fitur baru | `feat(chat): add typing indicator animation` |
 | `fix` | Memperbaiki bug | `fix(camera): resolve crash on permission denied` |
-| `refactor` | Refactor kode tanpa ubah behavior | `refactor(gemini): extract prompt builder to separate service` |
+| `refactor` | Refactor kode tanpa ubah behavior | `refactor(openrouter): extract prompt builder to separate service` |
 | `style` | Perubahan formatting/styling (bukan CSS) | `style(home): fix indentation in HomeViewModel` |
 | `docs` | Dokumentasi | `docs: update CONTRIBUTING.md with commit rules` |
 | `test` | Menambah/mengubah test | `test(chat): add unit test for ChatViewModel` |
-| `chore` | Maintenance, config, dependencies | `chore: add GoogleGenerativeAI package dependency` |
+| `chore` | Maintenance, config, dependencies | `chore: configure OpenRouter development credentials` |
 | `build` | Build system, CI/CD | `build: update Xcode project settings for iOS 17` |
 | `perf` | Performance improvement | `perf(chat): lazy load message images` |
 | `ui` | Perubahan UI/visual | `ui(home): update empty state illustration` |
@@ -99,7 +99,7 @@ Scope menunjukkan area kode yang berubah. Gunakan nama **feature folder**:
 | `camera` | Features/Camera/ |
 | `onboarding` | Features/Onboarding/ |
 | `settings` | Features/Settings/ |
-| `gemini` | Core/Managers/GeminiService |
+| `openrouter` | Features/Chat/Services/OpenRouterChatService |
 | `ocr` | Core/Managers/OCRService |
 | `entities` | Core/Entities/ |
 | `widget` | BuydeeWidget/ |
@@ -121,7 +121,7 @@ Scope menunjukkan area kode yang berubah. Gunakan nama **feature folder**:
 # ✅ Benar
 feat(chat): add action plan card component
 fix(camera): handle nil image data on capture
-refactor(gemini): split system prompt into separate file
+refactor(openrouter): split developer prompt into separate file
 chore: configure swiftdata model container in app entry
 docs: add branching strategy to contributing guide
 ui(home): implement empty state view with illustration
@@ -206,8 +206,18 @@ feat(chat): implement AI reflective conversation flow
 - Views: `ChatView.swift`, `MessageBubble.swift`
 - ViewModels: `ChatViewModel.swift`
 - Models: `ChatMessage.swift`
-- Services: `GeminiService.swift`
+- Services: `OpenRouterChatService.swift`
 - Extensions: `Date+Extensions.swift`
+
+### UI & Accessibility (HIG Standards)
+
+- **Dynamic Type**: Selalu gunakan font kustom kita dari `AppFont.swift` (contoh: `.font(.buydeeHeadline)`, `.font(.buydeeBody)`). Dilarang menggunakan font statis `.font(.system(size:))` atau standar bawaan (`.font(.title)`) agar tipografi aplikasi konsisten dengan Design System.
+- **Colors**: Wajib menggunakan palet warna dari `AppColor.swift` (contoh: `Color.buydee.primaryText`, `Color.buydee.primaryButton`). Dilarang menaruh *hex code* atau *RGB color* secara manual di dalam View.
+- **Corner Radius**: Gunakan `BuydeeRadius` (contoh: `BuydeeRadius.small`, `BuydeeRadius.medium`) untuk menjaga konsistensi kebulatan elemen.
+- **Modern SwiftUI API**: Hindari fungsi yang sudah berstatus *deprecated*. 
+  - Gunakan `.foregroundStyle(...)` daripada `.foregroundColor(...)`.
+  - Gunakan `.clipShape(RoundedRectangle(cornerRadius: ...))` daripada `.cornerRadius(...)`.
+- **Touch Targets**: Pastikan button dan interactive elements memiliki minimum tap area 44x44 pt.
 
 ### Architecture Rules
 

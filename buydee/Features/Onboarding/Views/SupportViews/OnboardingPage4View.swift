@@ -2,167 +2,198 @@
 //  OnboardingPage4View.swift
 //  buydee
 //
-
 import SwiftUI
-
 struct OnboardingPage4View: View {
+    // MARK: - Properties
     @Bindable var viewModel: OnboardingViewModel
     var action: () -> Void
     
+    @State private var isKeyboardVisible: Bool = false
+    
+    // MARK: - Body
     var body: some View {
-        ZStack {
-            // Background
-            VStack(spacing: 0) {
-                Color.buydee.cardBackground
-                    .frame(height: 300)
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                Color.buydee.canvasBackground.ignoresSafeArea()
                 
-                GeometryReader { geometry in
-                    ZStack(alignment: .top) {
-                        Color.buydee.background
+                
+                
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("What are you saving from?")
+                        .font(.buydeeLargeTitle)
+                        .foregroundStyle(Color.buydee.primaryText)
                         
-                        // Simulated curve
-                        Ellipse()
-                            .fill(Color.buydee.cardBackground)
-                            .frame(width: geometry.size.width * 1.5, height: 200)
-                            .offset(y: -100)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped() // Mencegah background melebar dan mengacaukan TabView
-                }
-            }
-            .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                
-                // Header text
-                VStack(alignment: .leading) {
-                    Text("Before we go,")
-                        .font(.largeTitle) // Dynamic Type
-                        .fontWeight(.bold)
-                        .foregroundColor(Color.buydee.primaryText)
-                        .padding(.top, 40)
-                        .padding(.horizontal, 32)
+                        
                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("We’ll remind you what matters whenever you're tempted to buy.")
+                        .font(.buydeeBody)
+                        .foregroundStyle(Color.buydee.primaryText)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 32)
+                .padding(.top, 36)
+                .padding(.bottom, 30)
                 
-                // Otter Placeholder Illustration
-                Image(systemName: "seal.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 120, height: 120)
-                    .foregroundColor(Color.buydee.primaryButton)
-                    .padding(.top, 20)
                 
-                // Question
-                Text("What would you like to\nkeep it in mind before you buy?")
-                    .font(.title3) // Dynamic Type
-                    .fontWeight(.semibold)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(Color.buydee.primaryText)
-                    .padding(.top, 20)
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 24)
+//                Image("otter")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(height: 250)
+//                    .position(x: geometry.size.width / 2, y: geometry.size.height * 0.25 + 50)
                 
-                // Options List
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(OnboardingGoal.allCases) { goal in
-                            GoalSelectionRow(
-                                goal: goal,
-                                isSelected: viewModel.selectedGoal == goal,
-                                customText: $viewModel.customGoalText
-                            ) {
-                                viewModel.selectGoal(goal)
+                
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    
+                    ZStack(alignment: .top) {
+                        VStack(spacing: 0) {
+                           
+                            ScrollView {
+                                VStack(spacing: 12) {
+                                    ForEach(OnboardingGoal.allCases) { goal in
+                                        GoalSelectionRow(
+                                            goal: goal,
+                                            isSelected: viewModel.selectedGoal == goal,
+                                            customText: Binding(
+                                                get: { viewModel.customGoalTexts[goal] ?? "" },
+                                                set: { viewModel.customGoalTexts[goal] = $0 }
+                                            ),
+                                            isKeyboardVisible: $isKeyboardVisible
+                                        ) {
+                                            isKeyboardVisible = false
+                                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                            viewModel.selectGoal(goal)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 32)
+                                .padding(.bottom, 20)
+                                .padding(.top,72)
                             }
+                            .scrollDisabled(true)
+                            .scrollIndicators(.hidden)
+                            
+                            Spacer(minLength: 0)
+                            
+                            let currentText = viewModel.selectedGoal.flatMap { viewModel.customGoalTexts[$0] } ?? ""
+                            let isDisabled = viewModel.selectedGoal == nil || currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            
+                            Button(action: action) {
+                                Text("Meet me")
+                                    .font(.buydeeHeadline)
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(isDisabled ? Color.gray.opacity(0.6) : Color.buydee.primaryButton)
+                                    .clipShape(RoundedRectangle(cornerRadius: BuydeeRadius.small))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 48)
+                            .disabled(isDisabled)
                         }
                     }
-                    .padding(.horizontal, 32)
+                    .background(
+                        Color.buydee.background
+                            .clipShape(CurveTopShape())
+                            .ignoresSafeArea(edges: .bottom)
+                    )
+                    .frame(height: geometry.size.height * 0.70)
                 }
-                
-                Spacer()
-                
-                Button(action: action) {
-                    Text("Meet me")
-                        .font(.headline) // Dynamic Type
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.buydee.primaryButton)
-                        .clipShape(Capsule())
-                }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 20)
-                .disabled(viewModel.selectedGoal == nil || (viewModel.selectedGoal == .others && viewModel.customGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
-                .opacity(viewModel.selectedGoal == nil ? 0.5 : 1.0)
             }
+            .offset(y: isKeyboardVisible ? -180 : 0)
+            .animation(.easeOut(duration: 0.25), value: isKeyboardVisible)
         }
+        .ignoresSafeArea(.keyboard)
     }
 }
-
 // MARK: - Support View
 struct GoalSelectionRow: View {
+    // MARK: - Properties
     let goal: OnboardingGoal
     let isSelected: Bool
     @Binding var customText: String
-    let action: () -> Void
+    @Binding var isKeyboardVisible: Bool
+    var action: () -> Void
     
+    @FocusState private var isFocused: Bool
+
+    // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
             Button(action: action) {
                 HStack(spacing: 16) {
                     Image(systemName: goal.iconName)
                         .font(.title3)
-                        .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.35)) // Dark navy blue as per design
+                        .foregroundStyle(Color.buydee.primaryText)
                         .frame(width: 24)
-                    
                     Text(goal.rawValue)
-                        .font(.body) // Dynamic Type
-                        .fontWeight(.medium)
-                        .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.35))
-                    
+                        .font(.buydeeHeadline)
+                        .foregroundStyle(Color.buydee.primaryText)
                     Spacer()
                 }
-                .padding(.horizontal, 20)
                 .padding(.vertical, 16)
+                .padding(.horizontal, 20)
                 .background(Color.buydee.cardBackground)
-                .cornerRadius(isSelected && goal == .others ? 16 : 16, corners: isSelected && goal == .others ? [.topLeft, .topRight] : .allCorners)
+                .cornerRadius(BuydeeRadius.small, corners: isSelected ? [.topLeft, .topRight] : .allCorners)
             }
-            .buttonStyle(.plain) // Wajib agar layout Button tidak hancur di dalam ScrollView
-            
-            if isSelected && goal == .others {
-                TextField("Something else...", text: $customText)
-                    .font(.body) // Dynamic Type
+            .buttonStyle(.plain)
+            if isSelected {
+                TextField(
+                    "",
+                    text: $customText,
+                    prompt: Text(goal == .others ? "Something else..." : "Name your goal...")
+                        .foregroundColor(Color.buydee.secondaryText)
+                )
+                    .focused($isFocused)
+                    .onChange(of: isFocused) { _, newValue in
+                        isKeyboardVisible = newValue
+                    }
+                    .font(.buydeeBody)
+                    .foregroundStyle(Color.buydee.primaryText)
                     .padding(16)
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color.buydee.background.opacity(0.3))
                     .cornerRadius(8)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
                     .background(Color.buydee.cardBackground)
-                    .cornerRadius(16, corners: [.bottomLeft, .bottomRight])
+                    .cornerRadius(BuydeeRadius.small, corners: [.bottomLeft, .bottomRight])
             }
         }
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: BuydeeRadius.small)
                 .stroke(isSelected ? Color.buydee.primaryButton : Color.clear, lineWidth: 2)
         )
-        // Add subtle shadow for the cards
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
 }
-
 // MARK: - View Extension for Corners
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
     }
 }
-
 struct RoundedCorner: Shape {
     var radius: CGFloat = .infinity
     var corners: UIRectCorner = .allCorners
-    
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
         return Path(path.cgPath)
     }
+}
+struct CurveTopShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let curveDepth: CGFloat = 20
+        path.move(to: CGPoint(x: 0, y: curveDepth))
+        path.addQuadCurve(to: CGPoint(x: rect.width, y: curveDepth), control: CGPoint(x: rect.width / 2, y: -curveDepth))
+        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
+        path.addLine(to: CGPoint(x: 0, y: rect.height))
+        path.closeSubpath()
+        return path
+    }
+}
+#Preview {
+    OnboardingPage4View(viewModel: OnboardingViewModel(), action: {})
 }
