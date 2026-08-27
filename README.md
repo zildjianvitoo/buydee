@@ -1,3 +1,7 @@
+
+
+<img src="./buydee/Assets.xcassets/AppIcon.appiconset/BuydeeLogo-iOS-Default-1024x1024@1x.png" width="240" alt="CarPin logo" />
+
 # Buydee
 
 Buydee is an app that helps people who experience post-purchase regret break impulsive buying cycles and make intentional shopping choices by providing a guided conversation that encourages mindful consideration before making a purchase.
@@ -27,7 +31,13 @@ Compares spending decisions with progress toward the user's goals.
 ## 📷 Screenshots
 
 <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
-    <!-- Screenshots will be added later. -->
+    <img src="./buydee/Resources/Screenshots/onboardingScreen1.png" width="240" alt="Buydee onboarding screen 1" />
+    <img src="./buydee/Resources/Screenshots/onboardingScreen2.png" width="240" alt="Buydee onboarding screen 2" />
+    <img src="./buydee/Resources/Screenshots/homeScreen.png" width="240" alt="Buydee home screen" />
+    <img src="./buydee/Resources/Screenshots/roomChatScreen.png" width="240" alt="Buydee room chat screen" />
+    <img src="./buydee/Resources/Screenshots/resultNotBuyScreen.png" width="240" alt="Buydee result not buy screen" />
+    <img src="./buydee/Resources/Screenshots/resultBuyScreen.png" width="240" alt="Buydee result buy screen" />
+    
 </div>
 
 ## 👥 Team Members
@@ -42,3 +52,4 @@ Compares spending decisions with progress toward the user's goals.
 - Muhammad Fathariq Dimas Octaviandra
 - Muhammad Muttakin
 - Zildjian Vito Sulaiman
+
